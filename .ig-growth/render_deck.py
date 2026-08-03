@@ -29,8 +29,10 @@ NS = {
     "p": "http://schemas.openxmlformats.org/presentationml/2006/main",
 }
 
+# Opseg NE sme da obuhvati strelice U+2190-21FF: tekstualni font ih ima, a
+# emoji font nema, pa bi '→' bilo poslato u pogresan font i nestalo.
 EMOJI_RE = re.compile(
-    "([\U0001F000-\U0001FAFF☀-➿⬀-⯿️←-⇿⌀-⏿]+)"
+    "([\U0001F000-\U0001FAFF☀-➿⬀-⯿️⌚-⌛⏩-⏳]+)"
 )
 
 _font_cache = {}
@@ -118,9 +120,13 @@ def draw_rich(img, text, x, y, fnt, px, color):
                 try:
                     ImageDraw.Draw(tile).text((0, 0), ch, font=ef, embedded_color=True)
                 except Exception:
-                    continue
-                bbox = tile.getbbox()
+                    tile = None
+                bbox = tile.getbbox() if tile else None
                 if not bbox:
+                    # Emoji font nema ovaj znak - crtamo ga tekstualnim fontom
+                    # umesto da ga tiho ispustimo.
+                    ImageDraw.Draw(img).text((cx, y), ch, font=fnt, fill=color + (255,))
+                    cx += fnt.getlength(ch)
                     continue
                 tile = tile.crop(bbox)
                 target_h = int(px * 1.0)
