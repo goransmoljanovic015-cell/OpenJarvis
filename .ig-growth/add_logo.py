@@ -2,10 +2,10 @@
 """
 Utiskuje brend logo na slajdove karusela.
 
-Logo dolazi kao tamni kvadrat sa neonskim znakom. Da ne bi ostavljao vidljiv
-pravougaonik preko slajda, pozadina se skida po svetlini: tamno postaje
-providno, znak i sjaj oko njega ostaju. To cuva glow bolje nego tvrdo
-izrezivanje po ivici.
+Logo se lepi netaknut - onakav kakav je u fajlu, bez diranja piksela.
+Posto dolazi kao neonski znak na tamnom kvadratu, ta podloga ostaje vidljiva
+kao pravougaonik preko slajda. KNOCKOUT_BACKDROP = True je skida po svetlini
+(tamno -> providno, znak i sjaj ostaju) ako to ikad zatreba.
 
 Upotreba:
     python3 add_logo.py <logo.png> <folder_sa_slajdovima> [izlazni_folder]
@@ -14,26 +14,28 @@ Upotreba:
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageEnhance, ImageStat
+from PIL import Image, ImageChops, ImageEnhance
 
 # Mali potpis na svakom slajdu
 MARK_SIZE = 104        # px na 1080 sirine
 MARK_MARGIN = 46
 MARK_OPACITY = 0.92
 
-# Istaknuta verzija na zavrsnom CTA slajdu
-HERO_MAX = 300         # gornja granica; stvarna velicina se bira prema slobodnom pojasu
-HERO_MIN = 150
-EDGE_GUARD = 28       # najmanji razmak hero logoa od ivice kadra
+# Istaknuta verzija na zavrsnom CTA slajdu - dole, centrirano
+HERO_SIZE = 250
+HERO_BOTTOM_MARGIN = 52
 
-# Prag svetline: ispod donjeg je providno, iznad gornjeg puna nepovidnost
+# Logo se ne dira. Prebaci na True ako tamna podloga treba da nestane.
+KNOCKOUT_BACKDROP = False
 DARK_CUT = 14
 LIGHT_FULL = 64
 
 
 def prepare_logo(path):
-    """Skida tamnu podlogu preko alfe izvedene iz svetline i sece na sadrzaj."""
+    """Ucitava logo. Podrazumevano ga ostavlja netaknutim."""
     logo = Image.open(path).convert("RGBA")
+    if not KNOCKOUT_BACKDROP:
+        return logo
 
     span = max(1, LIGHT_FULL - DARK_CUT)
     lum_alpha = logo.convert("L").point(
@@ -58,32 +60,6 @@ def fit(logo, size):
         (max(1, round(logo.width * ratio)), max(1, round(logo.height * ratio))),
         Image.LANCZOS,
     )
-
-
-def quiet_band(slide):
-    """
-    Najduzi vodoravni pojas bez sadrzaja. Red bez sadrzaja ima nisko odstupanje
-    piksela - pozadina je ujednacena, tekst i grafika je razbijaju. Tako hero
-    logo nalazi prazninu sam, umesto da mu koordinate stelujemo po decku.
-    """
-    gray = slide.convert("L")
-    w, h = gray.size
-    energy = [ImageStat.Stat(gray.crop((0, y, w, y + 1))).stddev[0] for y in range(h)]
-
-    ordered = sorted(energy)
-    limit = ordered[int(len(ordered) * 0.35)]
-
-    best = (0, 0)
-    start = None
-    for y, e in enumerate(energy + [float("inf")]):
-        if e <= limit:
-            if start is None:
-                start = y
-        elif start is not None:
-            if y - start > best[1] - best[0]:
-                best = (start, y)
-            start = None
-    return best
 
 
 def stamp(slide, logo, box_size, xy, opacity):
@@ -113,15 +89,12 @@ def main():
         last = i == len(slides)
 
         if last:
-            # Krupno i centrirano - zavrsni slajd nosi poziv na akciju
-            top, bottom = quiet_band(slide)
-            size = max(HERO_MIN, min(HERO_MAX, int((bottom - top) * 0.72)))
-            hero = fit(logo, size)
-            y = top + (bottom - top - hero.height) // 2
-            # Ne sme da dodiruje ivicu kadra ni kad je pojas uz sam rub
-            y = max(EDGE_GUARD, min(y, slide.height - hero.height - EDGE_GUARD))
-            stamp(slide, logo, size, ((slide.width - hero.width) // 2, y), 1.0)
-            where = f"krupno {size}px, pojas {top}-{bottom}px"
+            # Zavrsni slajd: krupno, uz donju ivicu, centrirano
+            hero = fit(logo, HERO_SIZE)
+            stamp(slide, logo, HERO_SIZE,
+                  ((slide.width - hero.width) // 2,
+                   slide.height - hero.height - HERO_BOTTOM_MARGIN), 1.0)
+            where = f"krupno {HERO_SIZE}px, dole centrirano"
         else:
             stamp(slide, logo, MARK_SIZE, (MARK_MARGIN, MARK_MARGIN), MARK_OPACITY)
             where = "malo, gore levo"
