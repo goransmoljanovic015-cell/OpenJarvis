@@ -1,9 +1,13 @@
 {
-  "current_phase": 5,
+  "current_phase": 6,
   "status": "complete",
-  "phases_completed": [0, 1, 2, 3, 4, 5],
+  "phases_completed": [0, 1, 2, 3, 4, 5, 6],
   "last_updated": "2026-08-03",
-  "next_phase": 6,
+  "next_phase": null,
   "current_trend": "AI za automatizaciju svakodnevnih poslova",
-  "message": "Phase 5 ✅ Complete. 7-day schedule ready. Next: Full Automation"
+  "message": "Phase 6 ✅ Complete. FULL IG GROWTH ENGINE READY TO SHIP! 🚀",
+  "posts_scheduled": 7,
+  "posts_published": 0,
+  "dms_sent": 0,
+  "comments_responded": 0
 }
