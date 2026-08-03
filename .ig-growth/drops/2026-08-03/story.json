@@ -1,0 +1,65 @@
+{
+  "date": "2026-08-03",
+  "phase": 2,
+  "trend": "AI za automatizaciju svakodnevnih poslova",
+  "handle": "@Goran015",
+  "story": {
+    "hook": "Probudio sam se u 5:30 ujutru i prvo što sam uradio? Ništa. 😅",
+    "body": [
+      "Pošao sam na kafu, a moj laptop je radio umesto mene.",
+      "Kako? Trebalo mi je samo 2 minuta da postavim AI alate koji sada:",
+      "→ Odgovaraju na emails",
+      "→ Prave social media content",
+      "→ Organizuju moj kalendar",
+      "→ Urade sve što mi je trebalo 5 sati dnevno",
+      "Sada trebam samo 30 minuta. Ostatak dana je MOJ.",
+      "A evo šta me čini svim razočaravaše..."
+    ],
+    "transformation": {
+      "before": "5 sati dnevno - ispunjavanje ponavljajućih poslova",
+      "after": "30 minuta - samo pregled + finalne izmene"
+    },
+    "cta": "Šta AI automatizuje za tebe? 👇 Komentar i save ovaj post!"
+  },
+  "caption": {
+    "main": "7 Poslova koje AI može za tebe (Besplatno) 🤖",
+    "hook": "Osporavao sam da ovo radi dok nisam video šta se dešava kada AI radi 8 sati dok ja spavam...",
+    "breakdown": [
+      "1️⃣ **Email Management** - Automatski odgovori + kategorizacija",
+      "   Tool: Gmail + Make (besplatno za 100 automacija/mesec)",
+      "",
+      "2️⃣ **Social Media Posting** - Automatski objavljivanje po rasporedu",
+      "   Tool: Buffer (besplatno) ili Later",
+      "",
+      "3️⃣ **Kalendar Organizacija** - Automatski zakazivanje + reminders",
+      "   Tool: Google Calendar + Zapier",
+      "",
+      "4️⃣ **AI Content Writing** - Drafts sa ChatGPT",
+      "   Tool: Make + ChatGPT API",
+      "",
+      "5️⃣ **Data Organization** - Automatic spreadsheet updates",
+      "   Tool: Google Sheets + Zapier",
+      "",
+      "6️⃣ **Customer Support** - AI chatbots odgovori",
+      "   Tool: Tidio (besplatno) ili Manychat",
+      "",
+      "7️⃣ **Backup & Archiving** - Auto cloud backup",
+      "   Tool: Google Drive + Make"
+    ],
+    "social_proof": "Prvo mi je trebalo 8 sati da to postavim. Sada štedi 35 sati mesečno. 📊",
+    "cta_final": "Koji od ovih 7 bi ti dao najveću slobodu? Reci u komentar 👇 (Moj favorit je #4)",
+    "hashtags": "#AI #Automatizacija #ChatGPT #Produktivnost #DeoNule #FreeTools #AIForBeginners"
+  },
+  "engagement_strategy": {
+    "hook_strength": "Personal transformation + relatable problem",
+    "urgency": "Free tools mentioned = low barrier to try",
+    "controversy": "People doubt AI works - proof kills skepticism",
+    "call_to_action": "Comment + Save = algorithm boost + community"
+  },
+  "estimated_performance": {
+    "expected_likes": "200-500",
+    "expected_comments": "30-80",
+    "expected_saves": "100-200",
+    "share_potential": "High - actionable content"
+  }
+}
