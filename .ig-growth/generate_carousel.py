@@ -115,29 +115,27 @@ def hex_to_rgb(hex_color):
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
 def draw_text_centered(draw, text, xy, font, fill, max_width=None, line_height=1.2):
-    """Crta tekst centrirano sa word-wrap podelom"""
+    """Crta tekst centrirano. Poštuje eksplicitni \\n, pa tek onda word-wrap."""
     x, y = xy
 
-    # Word wrap ako je potrebno
-    if max_width:
-        words = text.split()
-        lines = []
-        current_line = []
+    # Eksplicitni prelomi reda su uvek prvi - word-wrap se primenjuje unutar njih
+    lines = []
+    for paragraph in text.split('\n'):
+        if not max_width:
+            lines.append(paragraph)
+            continue
 
-        for word in words:
+        current_line = []
+        for word in paragraph.split():
             test_line = ' '.join(current_line + [word])
             bbox = draw.textbbox((0, 0), test_line, font=font)
-            if bbox[2] - bbox[0] > max_width:
-                if current_line:
-                    lines.append(' '.join(current_line))
+            if bbox[2] - bbox[0] > max_width and current_line:
+                lines.append(' '.join(current_line))
                 current_line = [word]
             else:
                 current_line.append(word)
 
-        if current_line:
-            lines.append(' '.join(current_line))
-    else:
-        lines = text.split('\n')
+        lines.append(' '.join(current_line))
 
     # Crta svaki red
     for i, line in enumerate(lines):
@@ -160,6 +158,7 @@ def create_slide(slide_data):
         body_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36)
         detail_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
         small_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
+        badge_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 96)
     except:
         # Fallback ako font ne postoji
         title_font = ImageFont.load_default()
@@ -167,6 +166,7 @@ def create_slide(slide_data):
         body_font = ImageFont.load_default()
         detail_font = ImageFont.load_default()
         small_font = ImageFont.load_default()
+        badge_font = ImageFont.load_default()
 
     # ========== COVER SLIDE (Slide 1) ==========
     if slide_data["type"] == "cover":
@@ -192,23 +192,36 @@ def create_slide(slide_data):
 
     # ========== TOOL SLIDE (Slides 2-8) ==========
     elif slide_data["type"] == "tool":
-        # Emoji/broj
-        draw_text_centered(draw, slide_data["emoji"], (WIDTH//2, 200), subtitle_font, hex_to_rgb(NEON_CYAN))
+        # Kruzni badge sa rednim brojem alata - zamena za emoji
+        # (emoji se ne renderuje jer DejaVu font nema glifove za njih)
+        tool_num = str(slide_data["number"] - 1)
+        badge_r = 90
+        badge_cx, badge_cy = WIDTH // 2, 280
+        draw.ellipse(
+            [(badge_cx - badge_r, badge_cy - badge_r), (badge_cx + badge_r, badge_cy + badge_r)],
+            outline=hex_to_rgb(NEON_CYAN), width=6
+        )
+        draw.text((badge_cx, badge_cy), tool_num, font=badge_font,
+                  fill=hex_to_rgb(NEON_CYAN), anchor="mm")
 
-        # Naslov sa brojem
-        draw_text_centered(draw, slide_data["title"], (WIDTH//2, 350), title_font, hex_to_rgb(WHITE))
-
-        # Vreme štednje (crveno)
-        draw_text_centered(draw, slide_data["time_saved"], (WIDTH//2, 500), body_font, hex_to_rgb(RED_ALERT))
+        # Naziv alata (bez "#N" prefiksa - broj je vec u badge-u)
+        clean_title = slide_data["title"].split(" ", 1)[1]
+        draw_text_centered(draw, clean_title, (WIDTH//2, 470), title_font,
+                           hex_to_rgb(WHITE), max_width=920)
 
         # Dekorativna linija
-        draw.rectangle([(150, 570), (WIDTH-150, 580)], fill=hex_to_rgb(NEON_CYAN))
+        draw.rectangle([(240, 640), (WIDTH-240, 648)], fill=hex_to_rgb(NEON_CYAN))
 
-        # Opis
-        draw_text_centered(draw, slide_data["description"], (WIDTH//2, 750), body_font, hex_to_rgb(WHITE), max_width=900)
+        # Vreme stednje - istaknuto
+        draw_text_centered(draw, f"Štedi {slide_data['time_saved']}", (WIDTH//2, 720),
+                           subtitle_font, hex_to_rgb(RED_ALERT))
+
+        # Opis - eksplicitni prelomi reda se sada postuju
+        draw_text_centered(draw, slide_data["description"], (WIDTH//2, 900), body_font,
+                           hex_to_rgb(WHITE), max_width=880, line_height=1.45)
 
         # Footer sa brojem slide-a
-        draw_text_centered(draw, f"Slide {slide_data['number']}/9", (WIDTH//2, 1300), small_font, hex_to_rgb(GRAY_TEXT))
+        draw_text_centered(draw, f"{slide_data['number']} / 9", (WIDTH//2, 1270), small_font, hex_to_rgb(GRAY_TEXT))
 
     # ========== CTA SLIDE (Slide 9) ==========
     elif slide_data["type"] == "cta":
