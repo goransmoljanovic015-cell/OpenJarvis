@@ -1,285 +1,464 @@
 #!/usr/bin/env python3
 """
-Instagram Carousel Generator - 9 Neon Cyber Slides
-Generiše 1080x1350px PNG slike za karuzel post
+Instagram Carousel Generator - Futuristic Premium Edition
+Generise 9 slajdova 1080x1350px u neon cyber estetici.
+
+Dizajn sistem:
+  - Vertikalni gradijent + radijalni glow umesto ravne pozadine
+  - Tehnicka mreza (grid) i vinjeta za dubinu
+  - HUD uglovi na svakom slajdu
+  - Neonski glow na fokalnom tekstu (blur layer ispod ostrog teksta)
+  - Staklene ploce (glassmorphism) za sadrzaj
+  - Progress indikator umesto tekstualnog "2 / 9"
 """
 
-from PIL import Image, ImageDraw, ImageFont
-import os
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from pathlib import Path
 
 # ============================================================================
-# KONSTANTE - BOJE I DIMENZIJE
+# DIZAJN TOKENI
 # ============================================================================
 
-# Neon Cyber Paleta (iz paleta_hex.txt)
-DARK_BG = "#010B18"           # Tamna navy - pozadina
-NEON_CYAN = "#30D1F5"         # Neon cyan - akcentu
-WHITE = "#FFFFFF"              # Bela - tekst
-RED_ALERT = "#8B2E3A"         # Crvena - akcenti
-GRAY_TEXT = "#BDC2CA"         # Light gray - secondary tekst
+BG_TOP = "#02101F"        # gornji deo gradijenta
+BG_BOTTOM = "#01070E"     # donji deo gradijenta - dublji
+NEON_CYAN = "#30D1F5"
+CYAN_DEEP = "#1DA9DF"
+WHITE = "#FFFFFF"
+RED_ALERT = "#FF4D5A"     # posvetljeno u odnosu na #8B2E3A radi kontrasta
+GRAY_TEXT = "#8A94A6"
+GRID_LINE = "#123048"
 
-# Instagram Carousel Standard
-WIDTH = 1080
-HEIGHT = 1350
+WIDTH, HEIGHT = 1080, 1350
+MARGIN = 64
 
-# Output direktorijum
+FONT_DIR = "/usr/share/fonts/truetype/dejavu"
 OUTPUT_DIR = Path(__file__).parent / "carousel_output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
+
+def hex_to_rgb(hex_color):
+    hex_color = hex_color.lstrip("#")
+    return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def load_fonts():
+    def bold(size):
+        return ImageFont.truetype(f"{FONT_DIR}/DejaVuSans-Bold.ttf", size)
+
+    def regular(size):
+        return ImageFont.truetype(f"{FONT_DIR}/DejaVuSans.ttf", size)
+
+    return {
+        "hero": bold(300),      # veliki broj na coveru
+        "badge": bold(88),      # broj u badge-u
+        "title": bold(62),
+        "subtitle": bold(44),
+        "body": regular(34),
+        "chip": bold(28),
+        "kicker": bold(22),     # letterspaced sitne verzalne
+        "meta": regular(24),
+    }
+
+
 # ============================================================================
-# SLIDE DEFINICIJE
+# POZADINSKI SLOJEVI
+# ============================================================================
+
+def vertical_gradient(top_hex, bottom_hex):
+    """Gradijent se crta kao kolona 1px pa razvlaci - brzo i glatko."""
+    c_top, c_bottom = hex_to_rgb(top_hex), hex_to_rgb(bottom_hex)
+    column = Image.new("RGB", (1, HEIGHT))
+    for y in range(HEIGHT):
+        t = y / (HEIGHT - 1)
+        column.putpixel((0, y), tuple(
+            int(c_top[i] * (1 - t) + c_bottom[i] * t) for i in range(3)
+        ))
+    return column.resize((WIDTH, HEIGHT), Image.BILINEAR).convert("RGBA")
+
+
+def radial_glow(center, radius, hex_color, max_alpha=70):
+    """Meki radijalni sjaj. Gradi se na 1/4 rezolucije pa uvecava - jeftino."""
+    scale = 4
+    w, h = WIDTH // scale, HEIGHT // scale
+    mask = Image.new("L", (w, h), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy, r = center[0] // scale, center[1] // scale, radius // scale
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=max_alpha)
+    mask = mask.filter(ImageFilter.GaussianBlur(r * 0.55))
+    mask = mask.resize((WIDTH, HEIGHT), Image.BILINEAR)
+
+    layer = Image.new("RGBA", (WIDTH, HEIGHT), hex_to_rgb(hex_color) + (0,))
+    layer.putalpha(mask)
+    return layer
+
+
+def draw_grid(img, spacing=90, alpha=16):
+    """Tehnicka mreza - daje osecaj interfejsa, ne sme da se namece."""
+    layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    color = hex_to_rgb(GRID_LINE) + (alpha,)
+    for x in range(0, WIDTH, spacing):
+        d.line([(x, 0), (x, HEIGHT)], fill=color, width=1)
+    for y in range(0, HEIGHT, spacing):
+        d.line([(0, y), (WIDTH, y)], fill=color, width=1)
+    img.alpha_composite(layer)
+
+
+def add_vignette(img, strength=110):
+    """Zatamnjuje ivice da sadrzaj u centru izadje napred."""
+    scale = 4
+    w, h = WIDTH // scale, HEIGHT // scale
+    mask = Image.new("L", (w, h), strength)
+    d = ImageDraw.Draw(mask)
+    d.ellipse([-w * 0.15, -h * 0.10, w * 1.15, h * 1.10], fill=0)
+    mask = mask.filter(ImageFilter.GaussianBlur(w * 0.18))
+    mask = mask.resize((WIDTH, HEIGHT), Image.BILINEAR)
+
+    shade = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    shade.putalpha(mask)
+    img.alpha_composite(shade)
+
+
+def build_backdrop(glow_center=None, glow_radius=560):
+    img = vertical_gradient(BG_TOP, BG_BOTTOM)
+    draw_grid(img)
+    if glow_center:
+        img.alpha_composite(radial_glow(glow_center, glow_radius, NEON_CYAN))
+    add_vignette(img)
+    return img
+
+
+# ============================================================================
+# HUD ELEMENTI
+# ============================================================================
+
+def draw_corner_brackets(img, length=64, width=3, inset=MARGIN, alpha=150):
+    """Uglovi u stilu HUD-a - okvir bez pravog okvira."""
+    layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    c = hex_to_rgb(NEON_CYAN) + (alpha,)
+    l, t, r, b = inset, inset, WIDTH - inset, HEIGHT - inset
+
+    for (x, y, dx, dy) in [(l, t, 1, 1), (r, t, -1, 1), (l, b, 1, -1), (r, b, -1, -1)]:
+        d.line([(x, y), (x + dx * length, y)], fill=c, width=width)
+        d.line([(x, y), (x, y + dy * length)], fill=c, width=width)
+
+    img.alpha_composite(layer)
+
+
+def draw_progress(img, active_index, total=9, y=1258):
+    """Aktivni slajd je izduzena pilula, ostali su tacke."""
+    layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+
+    dot, active_w, gap, h = 8, 34, 14, 8
+    total_w = sum(active_w if i == active_index else dot for i in range(total))
+    total_w += gap * (total - 1)
+    x = (WIDTH - total_w) / 2
+
+    for i in range(total):
+        w = active_w if i == active_index else dot
+        fill = hex_to_rgb(NEON_CYAN) + (255,) if i == active_index else hex_to_rgb(GRAY_TEXT) + (110,)
+        d.rounded_rectangle([x, y, x + w, y + h], radius=h // 2, fill=fill)
+        x += w + gap
+
+    img.alpha_composite(layer)
+
+
+def draw_accent_line(img, y, width=560, thickness=4):
+    """Linija koja bledi ka krajevima - gradi se od segmenata."""
+    layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    x0 = (WIDTH - width) / 2
+    steps = 60
+    for i in range(steps):
+        t = i / (steps - 1)
+        alpha = int(255 * (1 - abs(t - 0.5) * 2) ** 0.6)
+        sx = x0 + width * t
+        d.rectangle([sx, y, sx + width / steps + 1, y + thickness],
+                    fill=hex_to_rgb(NEON_CYAN) + (alpha,))
+    img.alpha_composite(layer)
+
+
+def draw_glass_panel(img, box, radius=28, fill_alpha=16, border_alpha=64):
+    """Poluprozirna ploca sa tankim ramom - nosi telo teksta."""
+    layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    d.rounded_rectangle(box, radius=radius,
+                        fill=hex_to_rgb(NEON_CYAN) + (fill_alpha,),
+                        outline=hex_to_rgb(NEON_CYAN) + (border_alpha,), width=2)
+    img.alpha_composite(layer)
+
+
+def draw_chip(img, text, center, font, text_hex, border_hex, pad_x=34, pad_y=16):
+    """Pilula sa ramom - za istaknute metrike."""
+    tmp = ImageDraw.Draw(img)
+    tw = tmp.textlength(text, font=font)
+    th = font.size
+    cx, cy = center
+    box = [cx - tw / 2 - pad_x, cy - th / 2 - pad_y,
+           cx + tw / 2 + pad_x, cy + th / 2 + pad_y]
+
+    layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+    d.rounded_rectangle(box, radius=(th + pad_y * 2) // 2,
+                        fill=hex_to_rgb(border_hex) + (26,),
+                        outline=hex_to_rgb(border_hex) + (150,), width=2)
+    img.alpha_composite(layer)
+
+    ImageDraw.Draw(img).text((cx, cy), text, font=font,
+                             fill=hex_to_rgb(text_hex), anchor="mm")
+
+
+# ============================================================================
+# TEKST
+# ============================================================================
+
+def glow_text(img, text, xy, font, hex_color, blur=22, passes=3, anchor="mm"):
+    """Neonski sjaj: zamucena kopija ispod, ostar tekst se crta posle."""
+    layer = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    ImageDraw.Draw(layer).text(xy, text, font=font,
+                               fill=hex_to_rgb(hex_color) + (255,), anchor=anchor)
+    blurred = layer.filter(ImageFilter.GaussianBlur(blur))
+    for _ in range(passes):
+        img.alpha_composite(blurred)
+
+
+def draw_tracked(img, text, xy, font, hex_color, tracking=9, alpha=255):
+    """Razmaknuta verzalna slova - signalizira 'tehnicki' registar."""
+    d = ImageDraw.Draw(img)
+    widths = [d.textlength(ch, font=font) for ch in text]
+    total = sum(widths) + tracking * (len(text) - 1)
+    x = xy[0] - total / 2
+    for ch, w in zip(text, widths):
+        d.text((x, xy[1]), ch, font=font, fill=hex_to_rgb(hex_color) + (alpha,), anchor="lm")
+        x += w + tracking
+
+
+def draw_wrapped(img, text, xy, font, hex_color, max_width=None, line_height=1.4):
+    """Postuje eksplicitni \\n, pa tek onda prelama po sirini."""
+    d = ImageDraw.Draw(img)
+    lines = []
+    for paragraph in text.split("\n"):
+        if not max_width:
+            lines.append(paragraph)
+            continue
+        current = []
+        for word in paragraph.split():
+            trial = " ".join(current + [word])
+            if d.textlength(trial, font=font) > max_width and current:
+                lines.append(" ".join(current))
+                current = [word]
+            else:
+                current.append(word)
+        lines.append(" ".join(current))
+
+    step = font.size * line_height
+    start_y = xy[1] - (len(lines) - 1) * step / 2
+    for i, line in enumerate(lines):
+        d.text((xy[0], start_y + i * step), line, font=font,
+               fill=hex_to_rgb(hex_color), anchor="mm")
+
+
+# ============================================================================
+# SADRZAJ SLAJDOVA
 # ============================================================================
 
 SLIDES = [
     {
-        "number": 1,
         "type": "cover",
-        "title": "7 AI Alata",
-        "subtitle": "Koja Štede 35h/Mesec",
-        "detail": "Bez programiranja | Besplatno | Početak: Sada",
+        "kicker": "OD NULE DO AI",
+        "hero": "7",
+        "title": "AI ALATA",
+        "subtitle": "koja štede 35h mesečno",
+        "chips": ["BEZ KODA", "BESPLATNO", "ZA POČETNIKE"],
     },
     {
-        "number": 2,
-        "type": "tool",
-        "title": "#1 Email Automatizacija",
-        "emoji": "📧",
-        "time_saved": "3h/mesec",
-        "description": "Chat GPT + Make.com\nAutomatski odgovori na česte email-e",
+        "type": "tool", "index": 1,
+        "title": "Email Automatizacija",
+        "time_saved": "3h mesečno",
+        "stack": "ChatGPT + Make.com",
+        "description": "Automatski odgovori na česte upite.\nPostaviš jednom, radi zauvek.",
     },
     {
-        "number": 3,
-        "type": "tool",
-        "title": "#2 AI Slike",
-        "emoji": "🎨",
-        "time_saved": "2h/mesec",
-        "description": "Midjourney / Canva\n30 sekundi za gotovu sliku",
+        "type": "tool", "index": 2,
+        "title": "AI Slike",
+        "time_saved": "2h mesečno",
+        "stack": "Midjourney / Canva",
+        "description": "Gotova grafika za 30 sekundi.\nBez dizajnera i bez stock fotografija.",
     },
     {
-        "number": 4,
-        "type": "tool",
-        "title": "#3 Transkripcija",
-        "emoji": "🎤",
-        "time_saved": "1.5h/mesec",
-        "description": "Opus.pro\nVideo → Tekst u 2 minuta",
+        "type": "tool", "index": 3,
+        "title": "Transkripcija",
+        "time_saved": "1.5h mesečno",
+        "stack": "Opus.pro",
+        "description": "Video pretvoriš u tekst za 2 minuta.\nSpremno za blog, post ili karusel.",
     },
     {
-        "number": 5,
-        "type": "tool",
-        "title": "#4 Content Ideation",
-        "emoji": "💡",
-        "time_saved": "1h/mesec",
-        "description": "Chat GPT\n10 ideju za 30 sekundi",
+        "type": "tool", "index": 4,
+        "title": "Ideje za Sadržaj",
+        "time_saved": "1h mesečno",
+        "stack": "ChatGPT",
+        "description": "Deset ideja za trideset sekundi.\nNikad više prazan ekran.",
     },
     {
-        "number": 6,
-        "type": "tool",
-        "title": "#5 Social Scheduling",
-        "emoji": "📅",
-        "time_saved": "1h/mesec",
-        "description": "Buffer / Zapier\nAutomatski post-ovi",
+        "type": "tool", "index": 5,
+        "title": "Zakazivanje Objava",
+        "time_saved": "1h mesečno",
+        "stack": "Buffer / Zapier",
+        "description": "Nedelja objava zakazana odjednom.\nObjavljuje se dok ti spavaš.",
     },
     {
-        "number": 7,
-        "type": "tool",
-        "title": "#6 Analitika",
-        "emoji": "📊",
-        "time_saved": "1h/mesec",
-        "description": "Google Analytics\nSve metrike na jednom mestu",
+        "type": "tool", "index": 6,
+        "title": "Analitika",
+        "time_saved": "1h mesečno",
+        "stack": "Google Analytics",
+        "description": "Sve metrike na jednom mestu.\nPregled za pet minuta, ne za sat.",
     },
     {
-        "number": 8,
-        "type": "tool",
-        "title": "#7 CRM / Lead Capture",
-        "emoji": "🎯",
-        "time_saved": "0.5h/mesec",
-        "description": "Linktree + Zapier\nAutomatski lead tracking",
+        "type": "tool", "index": 7,
+        "title": "Praćenje Kontakata",
+        "time_saved": "0.5h mesečno",
+        "stack": "Linktree + Zapier",
+        "description": "Svaki klik i kontakt se beleži sam.\nNema ručnog prepisivanja.",
     },
     {
-        "number": 9,
         "type": "cta",
-        "title": "Počni Sada",
-        "subtitle": "Besplatan Checklist",
-        "detail": "linktr.ee/goran015",
-        "cta": "Sve 7 Alata Sa Setup Guide-om",
+        "kicker": "SLEDEĆI KORAK",
+        "title": "POČNI SADA",
+        "subtitle": "Besplatan setup paket",
+        "items": [
+            "Checklist svih 7 alata",
+            "Uputstva korak po korak",
+            "Gotovi šabloni za start",
+        ],
+        "link": "linktr.ee/goran015",
+        "footer": "Komentariši SETUP i šaljem ti odmah",
     },
 ]
 
+
 # ============================================================================
-# HELPER FUNKCIJE
+# RENDER
 # ============================================================================
 
-def hex_to_rgb(hex_color):
-    """Konvertuj hex boju u RGB tuple"""
-    hex_color = hex_color.lstrip('#')
-    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+def render_cover(data, f):
+    img = build_backdrop(glow_center=(WIDTH // 2, 430), glow_radius=620)
+    draw_corner_brackets(img)
 
-def draw_text_centered(draw, text, xy, font, fill, max_width=None, line_height=1.2):
-    """Crta tekst centrirano. Poštuje eksplicitni \\n, pa tek onda word-wrap."""
-    x, y = xy
+    draw_tracked(img, data["kicker"], (WIDTH // 2, 190), f["kicker"], NEON_CYAN, tracking=14)
 
-    # Eksplicitni prelomi reda su uvek prvi - word-wrap se primenjuje unutar njih
-    lines = []
-    for paragraph in text.split('\n'):
-        if not max_width:
-            lines.append(paragraph)
-            continue
+    glow_text(img, data["hero"], (WIDTH // 2, 450), f["hero"], NEON_CYAN, blur=40, passes=4)
+    ImageDraw.Draw(img).text((WIDTH // 2, 450), data["hero"], font=f["hero"],
+                             fill=hex_to_rgb(WHITE), anchor="mm")
 
-        current_line = []
-        for word in paragraph.split():
-            test_line = ' '.join(current_line + [word])
-            bbox = draw.textbbox((0, 0), test_line, font=font)
-            if bbox[2] - bbox[0] > max_width and current_line:
-                lines.append(' '.join(current_line))
-                current_line = [word]
-            else:
-                current_line.append(word)
+    glow_text(img, data["title"], (WIDTH // 2, 730), f["title"], NEON_CYAN, blur=26, passes=2)
+    ImageDraw.Draw(img).text((WIDTH // 2, 730), data["title"], font=f["title"],
+                             fill=hex_to_rgb(WHITE), anchor="mm")
 
-        lines.append(' '.join(current_line))
+    ImageDraw.Draw(img).text((WIDTH // 2, 820), data["subtitle"], font=f["subtitle"],
+                             fill=hex_to_rgb(NEON_CYAN), anchor="mm")
 
-    # Crta svaki red
-    for i, line in enumerate(lines):
-        bbox = draw.textbbox((0, 0), line, font=font)
-        line_width = bbox[2] - bbox[0]
-        line_x = x - line_width // 2
-        line_y = y + i * int(font.size * line_height)
-        draw.text((line_x, line_y), line, font=font, fill=fill)
+    draw_accent_line(img, 910)
 
-def create_slide(slide_data):
-    """Kreiraj jednu sliku slide-a"""
-    # Kreiraj nova slika
-    img = Image.new('RGB', (WIDTH, HEIGHT), hex_to_rgb(DARK_BG))
-    draw = ImageDraw.Draw(img)
+    # Tri metrike u redu
+    positions = [WIDTH // 2 - 320, WIDTH // 2, WIDTH // 2 + 320]
+    for chip, x in zip(data["chips"], positions):
+        draw_chip(img, chip, (x, 1020), f["chip"], NEON_CYAN, CYAN_DEEP, pad_x=22, pad_y=14)
 
-    # Pokušaj da učita font, ako ne uspe koristi default
-    try:
-        title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 60)
-        subtitle_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 48)
-        body_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36)
-        detail_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 28)
-        small_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
-        badge_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 96)
-    except:
-        # Fallback ako font ne postoji
-        title_font = ImageFont.load_default()
-        subtitle_font = ImageFont.load_default()
-        body_font = ImageFont.load_default()
-        detail_font = ImageFont.load_default()
-        small_font = ImageFont.load_default()
-        badge_font = ImageFont.load_default()
-
-    # ========== COVER SLIDE (Slide 1) ==========
-    if slide_data["type"] == "cover":
-        # Veliki "7" u centru
-        try:
-            big_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 280)
-        except:
-            big_font = title_font
-
-        draw.text((WIDTH//2, 350), "7", font=big_font, fill=hex_to_rgb(NEON_CYAN), anchor="mm")
-
-        # Naslov
-        draw_text_centered(draw, slide_data["title"], (WIDTH//2, 650), title_font, hex_to_rgb(WHITE))
-
-        # Podnaslov
-        draw_text_centered(draw, slide_data["subtitle"], (WIDTH//2, 750), subtitle_font, hex_to_rgb(NEON_CYAN))
-
-        # Detalj na dnu
-        draw_text_centered(draw, slide_data["detail"], (WIDTH//2, 1250), detail_font, hex_to_rgb(GRAY_TEXT))
-
-        # Dekorativna linija
-        draw.rectangle([(100, 900), (WIDTH-100, 910)], fill=hex_to_rgb(NEON_CYAN))
-
-    # ========== TOOL SLIDE (Slides 2-8) ==========
-    elif slide_data["type"] == "tool":
-        # Kruzni badge sa rednim brojem alata - zamena za emoji
-        # (emoji se ne renderuje jer DejaVu font nema glifove za njih)
-        tool_num = str(slide_data["number"] - 1)
-        badge_r = 90
-        badge_cx, badge_cy = WIDTH // 2, 280
-        draw.ellipse(
-            [(badge_cx - badge_r, badge_cy - badge_r), (badge_cx + badge_r, badge_cy + badge_r)],
-            outline=hex_to_rgb(NEON_CYAN), width=6
-        )
-        draw.text((badge_cx, badge_cy), tool_num, font=badge_font,
-                  fill=hex_to_rgb(NEON_CYAN), anchor="mm")
-
-        # Naziv alata (bez "#N" prefiksa - broj je vec u badge-u)
-        clean_title = slide_data["title"].split(" ", 1)[1]
-        draw_text_centered(draw, clean_title, (WIDTH//2, 470), title_font,
-                           hex_to_rgb(WHITE), max_width=920)
-
-        # Dekorativna linija
-        draw.rectangle([(240, 640), (WIDTH-240, 648)], fill=hex_to_rgb(NEON_CYAN))
-
-        # Vreme stednje - istaknuto
-        draw_text_centered(draw, f"Štedi {slide_data['time_saved']}", (WIDTH//2, 720),
-                           subtitle_font, hex_to_rgb(RED_ALERT))
-
-        # Opis - eksplicitni prelomi reda se sada postuju
-        draw_text_centered(draw, slide_data["description"], (WIDTH//2, 900), body_font,
-                           hex_to_rgb(WHITE), max_width=880, line_height=1.45)
-
-        # Footer sa brojem slide-a
-        draw_text_centered(draw, f"{slide_data['number']} / 9", (WIDTH//2, 1270), small_font, hex_to_rgb(GRAY_TEXT))
-
-    # ========== CTA SLIDE (Slide 9) ==========
-    elif slide_data["type"] == "cta":
-        # Naslov
-        draw_text_centered(draw, slide_data["title"], (WIDTH//2, 300), title_font, hex_to_rgb(NEON_CYAN))
-
-        # Podnaslov
-        draw_text_centered(draw, slide_data["subtitle"], (WIDTH//2, 450), subtitle_font, hex_to_rgb(WHITE))
-
-        # CTA box (visoko vidljiv)
-        box_y_top = 600
-        box_y_bottom = 800
-        draw.rectangle([(100, box_y_top), (WIDTH-100, box_y_bottom)], outline=hex_to_rgb(NEON_CYAN), width=3)
-        draw_text_centered(draw, slide_data["cta"], (WIDTH//2, (box_y_top + box_y_bottom)//2), body_font, hex_to_rgb(NEON_CYAN), max_width=800)
-
-        # Link na dnu
-        draw_text_centered(draw, slide_data["detail"], (WIDTH//2, 1100), subtitle_font, hex_to_rgb(NEON_CYAN))
-
-        # Footer
-        draw_text_centered(draw, "Besplatan Setup Guide + Templates", (WIDTH//2, 1250), detail_font, hex_to_rgb(GRAY_TEXT))
-
+    d = ImageDraw.Draw(img)
+    d.text((MARGIN + 24, HEIGHT - MARGIN - 40), "@goran015", font=f["meta"],
+           fill=hex_to_rgb(GRAY_TEXT), anchor="lm")
+    d.text((WIDTH - MARGIN - 24, HEIGHT - MARGIN - 40), "PREVUCI  →", font=f["meta"],
+           fill=hex_to_rgb(NEON_CYAN), anchor="rm")
     return img
 
-# ============================================================================
-# MAIN - GENERIŠI SVE SLIDES
-# ============================================================================
+
+def render_tool(data, f):
+    img = build_backdrop(glow_center=(WIDTH // 2, 330), glow_radius=430)
+    draw_corner_brackets(img)
+
+    draw_tracked(img, f"ALAT {data['index']:02d} — OD 07", (WIDTH // 2, 175),
+                 f["kicker"], GRAY_TEXT, tracking=12)
+
+    # Badge sa brojem alata - zamena za emoji, ne zavisi od fonta
+    cx, cy, r = WIDTH // 2, 335, 92
+    glow_text(img, str(data["index"]), (cx, cy), f["badge"], NEON_CYAN, blur=28, passes=2)
+    ring = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    ImageDraw.Draw(ring).ellipse([cx - r, cy - r, cx + r, cy + r],
+                                 outline=hex_to_rgb(NEON_CYAN) + (220,), width=4)
+    img.alpha_composite(ring)
+    ImageDraw.Draw(img).text((cx, cy), str(data["index"]), font=f["badge"],
+                             fill=hex_to_rgb(WHITE), anchor="mm")
+
+    draw_wrapped(img, data["title"], (WIDTH // 2, 540), f["title"], WHITE, max_width=900)
+    draw_accent_line(img, 630, width=420, thickness=3)
+
+    draw_chip(img, f"ŠTEDI {data['time_saved'].upper()}", (WIDTH // 2, 720),
+              f["chip"], RED_ALERT, RED_ALERT)
+
+    draw_glass_panel(img, [MARGIN + 56, 830, WIDTH - MARGIN - 56, 1080])
+    ImageDraw.Draw(img).text((WIDTH // 2, 892), data["stack"], font=f["chip"],
+                             fill=hex_to_rgb(NEON_CYAN), anchor="mm")
+    draw_wrapped(img, data["description"], (WIDTH // 2, 995), f["body"], WHITE,
+                 max_width=800, line_height=1.45)
+
+    # Tacke iznad handle-a - inace se preklapaju na dnu
+    draw_progress(img, data["index"], y=1192)
+    ImageDraw.Draw(img).text((WIDTH // 2, 1268), "@goran015",
+                             font=f["meta"], fill=hex_to_rgb(GRAY_TEXT), anchor="mm")
+    return img
+
+
+def render_cta(data, f):
+    img = build_backdrop(glow_center=(WIDTH // 2, 380), glow_radius=560)
+    draw_corner_brackets(img)
+
+    draw_tracked(img, data["kicker"], (WIDTH // 2, 190), f["kicker"], GRAY_TEXT, tracking=14)
+
+    glow_text(img, data["title"], (WIDTH // 2, 330), f["title"], NEON_CYAN, blur=32, passes=3)
+    ImageDraw.Draw(img).text((WIDTH // 2, 330), data["title"], font=f["title"],
+                             fill=hex_to_rgb(WHITE), anchor="mm")
+
+    ImageDraw.Draw(img).text((WIDTH // 2, 425), data["subtitle"], font=f["subtitle"],
+                             fill=hex_to_rgb(NEON_CYAN), anchor="mm")
+
+    draw_glass_panel(img, [MARGIN + 40, 530, WIDTH - MARGIN - 40, 830])
+    d = ImageDraw.Draw(img)
+    for i, item in enumerate(data["items"]):
+        y = 610 + i * 78
+        d.ellipse([MARGIN + 100, y - 9, MARGIN + 118, y + 9],
+                  outline=hex_to_rgb(NEON_CYAN), width=3)
+        d.text((MARGIN + 152, y), item, font=f["body"], fill=hex_to_rgb(WHITE), anchor="lm")
+
+    glow_text(img, data["link"], (WIDTH // 2, 990), f["subtitle"], NEON_CYAN, blur=26, passes=2)
+    draw_chip(img, data["link"], (WIDTH // 2, 990), f["subtitle"], WHITE, NEON_CYAN,
+              pad_x=48, pad_y=22)
+
+    draw_accent_line(img, 1105, width=460, thickness=3)
+    ImageDraw.Draw(img).text((WIDTH // 2, 1180), data["footer"], font=f["body"],
+                             fill=hex_to_rgb(GRAY_TEXT), anchor="mm")
+
+    draw_progress(img, 8)
+    return img
+
+
+RENDERERS = {"cover": render_cover, "tool": render_tool, "cta": render_cta}
+
 
 def main():
-    print(f"🎨 Generiše {len(SLIDES)} slide-ova za Instagram karuzel...")
-    print(f"📁 Output direktorijum: {OUTPUT_DIR}")
-    print()
+    fonts = load_fonts()
+    print(f"Generisem {len(SLIDES)} slajdova -> {OUTPUT_DIR}\n")
 
-    for slide_data in SLIDES:
-        print(f"  Slide {slide_data['number']:02d}/09 - {slide_data.get('title', 'Unknown')}...", end="", flush=True)
+    for i, data in enumerate(SLIDES, start=1):
+        label = data.get("title", "cover")
+        print(f"  {i:02d}/09  {label:.<34}", end="", flush=True)
+        img = RENDERERS[data["type"]](data, fonts)
+        img.convert("RGB").save(OUTPUT_DIR / f"slide_{i:02d}.png", "PNG")
+        print(" ok")
 
-        try:
-            # Kreiraj sliku
-            img = create_slide(slide_data)
+    print(f"\nGotovo. 9 slajdova 1080x1350px u {OUTPUT_DIR}")
 
-            # Spremi PNG
-            output_path = OUTPUT_DIR / f"slide_{slide_data['number']:02d}.png"
-            img.save(output_path, 'PNG', quality=95)
-
-            print(" ✅")
-        except Exception as e:
-            print(f" ❌ GREŠKA: {e}")
-
-    print()
-    print("✨ Karuzel je Gotov!")
-    print(f"📸 9 PNG slika sprema za Instagram carousel upload")
-    print(f"📁 Lokacija: {OUTPUT_DIR}")
-    print()
-    print("🚀 Sledeće korake:")
-    print("  1. Otvori Instagram")
-    print("  2. Kreiraj novi post")
-    print("  3. Odaberi sve 9 PNG slika (u redu: slide_01 do slide_09)")
-    print("  4. Upload kao carousel post")
-    print("  5. Dodaj caption i hashtagi (vidi STEP_4_MONDAY_POSTING.md)")
 
 if __name__ == "__main__":
     main()
