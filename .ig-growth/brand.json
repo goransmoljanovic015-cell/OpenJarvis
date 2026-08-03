@@ -1,0 +1,31 @@
+{
+  "handle": "Goran015",
+  "niche": "Od nule do AI",
+  "audience": {
+    "description": "Početnici bez tehničke osnove",
+    "age_range": "not_specified",
+    "occupation": "not_specified",
+    "pain_point": "Žele da razumeju AI"
+  },
+  "values": [
+    "Praktična primena",
+    "Novac",
+    "Automatizacija"
+  ],
+  "goals_3months": [
+    "Dostići 10k pratilaca",
+    "Početi da zarađujem"
+  ],
+  "strengths": [
+    "Grafika/editorska",
+    "Tehnički saveti",
+    "Kreativne ideje"
+  ],
+  "main_frustration": "Ne znam šta da objavljujem",
+  "success_criteria": [
+    "Zaraditi $500/mesec",
+    "Dostići 10k pratilaca i biti traženiji za kolaboracije",
+    "Postati authority u AI niši"
+  ],
+  "created_at": "2026-08-03"
+}
