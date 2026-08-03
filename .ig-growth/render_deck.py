@@ -215,20 +215,34 @@ def render_textbox(canvas, shape, S):
         line_pt, before_pt = para_spacing(para, pt)
         line_px, before_px = line_pt * PT, (before_pt * PT if p_i else 0)
 
-        fnt = font(px, bool(r0.font.bold))
+        bold = bool(r0.font.bold)
+        fnt = font(px, bold)
         color = run_color(r0)
         text = "".join(r.text for r in runs)
 
-        # prelamanje po sirini okvira
-        chunks, current = [], []
-        for wd in text.split():
-            trial = " ".join(current + [wd])
-            if measure(trial, fnt, px) > box_w and current:
-                chunks.append(" ".join(current))
-                current = [wd]
-            else:
-                current.append(wd)
-        chunks.append(" ".join(current))
+        def wrap(f, size_px):
+            out, current = [], []
+            for wd in text.split():
+                trial = " ".join(current + [wd])
+                if measure(trial, f, size_px) > box_w and current:
+                    out.append(" ".join(current))
+                    current = [wd]
+                else:
+                    current.append(wd)
+            out.append(" ".join(current))
+            return out
+
+        chunks = wrap(fnt, px)
+
+        # Okvir ima zadatu visinu, pa zna koliko redova prima. Zamena fonta
+        # (deck koristi uzi od Liberation Sans) ume da prelomi red koji je u
+        # originalu stao u jedan - tada se font smanjuje tacno toliko da
+        # prelom nestane, umesto da tekst iscuri preko sadrzaja ispod.
+        allowed = max(1, round(shape.height * S / line_px)) if line_px else 1
+        while len(chunks) > allowed and px > 8:
+            px *= 0.96
+            fnt = font(px, bold)
+            chunks = wrap(fnt, px)
 
         for c_i, chunk in enumerate(chunks):
             lines.append((chunk, fnt, px, color, para.alignment,
