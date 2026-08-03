@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Carousel - Download Slike</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #010B18 0%, #0D2B55 100%);
+            color: #FFFFFF;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #30D1F5;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #BDC2CA;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .info-box {
+            background: rgba(48, 209, 245, 0.1);
+            border: 2px solid #30D1F5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        .slides-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .slide-card {
+            background: rgba(13, 43, 85, 0.5);
+            border: 2px solid #30D1F5;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .slide-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px rgba(48, 209, 245, 0.5);
+        }
+        .slide-number {
+            background: linear-gradient(135deg, #30D1F5 0%, #1DA9DF 100%);
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .slide-preview {
+            width: 100%;
+            height: 200px;
+            background: #010B18;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #BDC2CA;
+            font-size: 0.9em;
+        }
+        .slide-download {
+            padding: 15px;
+            text-align: center;
+        }
+        .btn-download {
+            background: linear-gradient(135deg, #30D1F5 0%, #1DA9DF 100%);
+            color: #010B18;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-download:hover {
+            opacity: 0.8;
+        }
+        .download-all {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .btn-download-all {
+            background: linear-gradient(135deg, #8B2E3A 0%, #FF3B3B 100%);
+            color: #FFFFFF;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: opacity 0.3s;
+        }
+        .btn-download-all:hover {
+            opacity: 0.8;
+        }
+        .instructions {
+            background: rgba(139, 46, 58, 0.2);
+            border: 2px solid #8B2E3A;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 40px;
+        }
+        .instructions h3 {
+            color: #FF3B3B;
+            margin-bottom: 10px;
+        }
+        .instructions ol {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Instagram Carousel - 9 Slika</h1>
+        <p class="subtitle">Goran015 - 7 AI Alata Koja Štede 35h/Mesec</p>
+        
+        <div class="info-box">
+            <strong>✅ Sve 9 slika su spremiiene za upload na Instagram!</strong><br>
+            Rezolucija: 1080x1350px (Instagram standard)<br>
+            Format: PNG<br>
+            Ukupno: ~300KB
+        </div>
+
+        <div class="download-all">
+            <button class="btn-download-all" onclick="downloadAllZip()">📦 Download Sve 9 Slika (ZIP)</button>
+        </div>
+
+        <div class="slides-grid">
+            <div class="slide-card">
+                <div class="slide-number">Slide 1/9</div>
+                <div class="slide-preview">📊 Cover: "7" Neon</div>
+                <div class="slide-download">
+                    <a href="slide_01.png" download class="btn-download">⬇️ Download</a>
+                </div>
+            </div>
+
+            <div class="slide-card">
+                <div class="slide-number">Slide 2/9</div>
+                <div class="slide-preview">📧 Email Automatizacija</div>
+                <div class="slide-download">
+                    <a href="slide_02.png" download class="btn-download">⬇️ Download</a>
+                </div>
+            </div>
+
+            <div class="slide-card">
+                <div class="slide-number">Slide 3/9</div>
+                <div class="slide-preview">🎨 AI Slike</div>
+                <div class="slide-download">
+                    <a href="slide_03.png" download class="btn-download">⬇️ Download</a>
+                </div>
+            </div>
+
+            <div class="slide-card">
+                <div class="slide-number">Slide 4/9</div>
+                <div class="slide-preview">🎤 Transkripcija</div>
+                <div class="slide-download">
+                    <a href="slide_04.png" download class="btn-download">⬇️ Download</a>
+                </div>
+            </div>
+
+            <div class="slide-card">
+                <div class="slide-number">Slide 5/9</div>
+                <div class="slide-preview">💡 Content Ideation</div>
+                <div class="slide-download">
+                    <a href="slide_05.png" download class="btn-download">⬇️ Download</a>
+                </div>
+            </div>
+
+            <div class="slide-card">
+                <div class="slide-number">Slide 6/9</div>
+                <div class="slide-preview">📅 Social Scheduling</div>
+                <div class="slide-download">
+                    <a href="slide_06.png" download class="btn-download">⬇️ Download</a>
+                </div>
+            </div>
+
+            <div class="slide-card">
+                <div class="slide-number">Slide 7/9</div>
+                <div class="slide-preview">📊 Analitika</div>
+                <div class="slide-download">
+                    <a href="slide_07.png" download class="btn-download">⬇️ Download</a>
+                </div>
+            </div>
+
+            <div class="slide-card">
+                <div class="slide-number">Slide 8/9</div>
+                <div class="slide-preview">🎯 CRM/Lead Capture</div>
+                <div class="slide-download">
+                    <a href="slide_08.png" download class="btn-download">⬇️ Download</a>
+                </div>
+            </div>
+
+            <div class="slide-card">
+                <div class="slide-number">Slide 9/9</div>
+                <div class="slide-preview">🚀 CTA - Počni Sada</div>
+                <div class="slide-download">
+                    <a href="slide_09.png" download class="btn-download">⬇️ Download</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Kako Koristiti Slike na Instagram-u:</h3>
+            <ol>
+                <li>Download sve 9 slika (ili ZIP)</li>
+                <li>Otvori Instagram.com ili app</li>
+                <li>Klikni "Create" → "Post"</li>
+                <li>Odaberi sve 9 PNG slika REDOM (slide_01 do slide_09)</li>
+                <li>Klikni "Next"</li>
+                <li>Dodaj caption (vidi STEP_4_MONDAY_POSTING.md)</li>
+                <li>Dodaj hashtagi</li>
+                <li>Schedule za Monday 6:30 PM ili objavi odmah</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; color: #BDC2CA;">
+            <p>🚀 Spreman za launch Monday! Sveća sreće!</p>
+        </div>
+    </div>
+
+    <script>
+        function downloadAllZip() {
+            // Redirect to ZIP file
+            window.location.href = 'carousel_instagram.zip';
+        }
+    </script>
+</body>
+</html>
