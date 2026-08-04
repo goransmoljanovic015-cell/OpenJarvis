@@ -80,29 +80,36 @@ class _LightweightSystem:
         self.memory_backend = None
 
 
+def _configured_engine_key(app_state: Any) -> str:
+    """Best-effort lookup of the configured default engine key for telemetry."""
+    config = getattr(app_state, "config", None)
+    key = getattr(getattr(config, "engine", None), "default", None)
+    return key or "ollama"
+
+
 def _make_lightweight_system(
     engine: Any,
     model: str,
     config: Any = None,
 ) -> _LightweightSystem:
-    """Build a minimal system with a plain OllamaEngine.
+    """Build a minimal system with a plain engine for the configured backend.
 
     The server's ``app.state.engine`` is heavily wrapped
     (MultiEngine -> InstrumentedEngine -> GuardrailsEngine) and can
     return empty content from background threads.  Create a fresh
-    OllamaEngine directly (no health checks or model discovery that
-    could interfere with in-flight Ollama requests).
+    engine instance directly (no health checks or model discovery that
+    could interfere with in-flight requests), using whichever backend
+    ``config.engine.default`` names — not hardcoded to Ollama.
     """
     try:
-        from openjarvis.engine.ollama import OllamaEngine
+        from openjarvis.engine._discovery import _make_engine
 
         cfg = config
         if cfg is None:
             from openjarvis.core.config import load_config
 
             cfg = load_config()
-        host = cfg.engine.ollama.host if cfg else ""
-        plain_engine = OllamaEngine(host=host) if host else OllamaEngine()
+        plain_engine = _make_engine(cfg.engine.default, cfg)
         # Wrap with InstrumentedEngine so agent ticks are recorded
         # in telemetry (FLOPs, energy, cost savings).
         try:
@@ -924,7 +931,7 @@ async def _stream_managed_agent(
                                 "total_tokens": total_tok or (prompt_tok + comp_tok),
                             },
                             "telemetry": {
-                                "engine": "ollama",
+                                "engine": _configured_engine_key(app_state),
                                 "model_id": model,
                                 "total_ms": round(elapsed_s * 1000),
                                 "tokens_per_sec": speed,
