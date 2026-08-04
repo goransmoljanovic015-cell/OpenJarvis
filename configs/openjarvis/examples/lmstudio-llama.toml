@@ -1,0 +1,28 @@
+# LM Studio + Llama 3.1 8B — local inference via LM Studio's OpenAI-compatible server
+# Copy to ~/.openjarvis/config.toml
+#
+# Setup:
+#   1. In LM Studio, load "Llama 3.1 8B Instruct" (or your downloaded variant)
+#   2. Start LM Studio's local server (Developer tab -> Start Server), default port 1234
+#   3. Check the exact model id LM Studio reports:
+#        curl http://localhost:1234/v1/models
+#   4. Update default_model below to match if it differs
+#
+# Usage:
+#   jarvis ask "Summarize this file for me"
+
+[engine]
+default = "lmstudio"
+
+[engine.lmstudio]
+host = "http://localhost:1234"
+
+[intelligence]
+default_model = "llama-3.1-8b-instruct"
+
+[agent]
+default_agent = "orchestrator"
+max_turns = 10
+
+[tools]
+enabled = ["code_interpreter", "file_read", "file_write", "shell_exec", "web_search", "think", "calculator"]
