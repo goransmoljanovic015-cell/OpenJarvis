@@ -18,7 +18,7 @@ default = "lmstudio"
 host = "http://localhost:1234"
 
 [intelligence]
-default_model = "llama-3.1-8b-instruct"
+default_model = "meta-llama-3.1-8b-instruct"
 
 [agent]
 default_agent = "orchestrator"
