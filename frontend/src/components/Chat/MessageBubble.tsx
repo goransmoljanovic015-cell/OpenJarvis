@@ -5,12 +5,13 @@ import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import 'katex/dist/katex.min.css';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Volume2, Loader2 } from 'lucide-react';
 import { AudioPlayer } from './AudioPlayer';
 import { ToolCallCard } from './ToolCallCard';
 import { ResearchTimeline } from './ResearchTimeline';
 import { rehypeCitations } from '../../lib/rehype-citations';
 import { XRayFooter } from './XRayFooter';
+import { synthesizeSpeech } from '../../lib/api';
 import type { ChatMessage } from '../../types';
 
 function stripThinkTags(text: string): string {
@@ -100,6 +101,48 @@ function CopyMessageButton({ content }: { content: string }) {
   );
 }
 
+function SpeakMessageButton({ text }: { text: string }) {
+  const [state, setState] = useState<'idle' | 'loading' | 'playing' | 'error'>('idle');
+
+  const handleSpeak = async () => {
+    if (state === 'loading' || state === 'playing') return;
+    setState('loading');
+    try {
+      const blob = await synthesizeSpeech(text);
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => {
+        setState('idle');
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = () => {
+        setState('error');
+        URL.revokeObjectURL(url);
+      };
+      setState('playing');
+      await audio.play();
+    } catch {
+      setState('error');
+    }
+  };
+
+  return (
+    <button
+      onClick={handleSpeak}
+      disabled={state === 'loading' || state === 'playing'}
+      className="p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-default"
+      style={{ color: state === 'error' ? 'var(--color-danger, #e5484d)' : 'var(--color-text-tertiary)' }}
+      title={state === 'error' ? 'Speech synthesis failed (is the TTS backend installed?)' : 'Read aloud'}
+    >
+      {state === 'loading' ? (
+        <Loader2 size={14} className="animate-spin" />
+      ) : (
+        <Volume2 size={14} />
+      )}
+    </button>
+  );
+}
+
 export function MessageBubble({ message, isLive = false }: Props) {
   const isUser = message.role === 'user';
 
@@ -181,6 +224,7 @@ export function MessageBubble({ message, isLive = false }: Props) {
       {/* Footer: copy + x-ray */}
       <div className="flex items-center gap-2 mt-1.5">
         <CopyMessageButton content={cleanContent} />
+        {cleanContent && <SpeakMessageButton text={cleanContent} />}
       </div>
       <XRayFooter
         usage={message.usage}

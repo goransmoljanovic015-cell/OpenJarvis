@@ -299,6 +299,27 @@ export async function fetchSpeechHealth(): Promise<SpeechHealth> {
   return res.json();
 }
 
+export async function synthesizeSpeech(
+  text: string,
+  opts: { backend?: string; voiceId?: string; speed?: number } = {}
+): Promise<Blob> {
+  const res = await fetch(`${getBase()}/v1/speech/synthesize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text,
+      backend: opts.backend,
+      voice_id: opts.voiceId,
+      speed: opts.speed,
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(detail.detail || `Speech synthesis failed: ${res.status}`);
+  }
+  return res.blob();
+}
+
 // ---------------------------------------------------------------------------
 // Agent Manager
 // ---------------------------------------------------------------------------

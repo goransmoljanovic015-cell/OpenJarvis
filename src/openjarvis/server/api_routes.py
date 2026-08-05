@@ -8,6 +8,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -781,6 +782,57 @@ async def speech_health(request: Request):
         "available": backend.health(),
         "backend": backend.backend_id,
     }
+
+
+# TTS backends are lazy-loaded once per process — construction (and, for
+# kokoro, first-use model download) is expensive, so we cache instances
+# by backend key rather than rebuilding one per request.
+_tts_backend_cache: Dict[str, Any] = {}
+
+
+@speech_router.post("/synthesize")
+async def synthesize_speech(request: Request):
+    """Synthesize text to speech audio using a local TTS backend."""
+    body = await request.json()
+    text = (body.get("text") or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Missing 'text' field")
+
+    backend_key = body.get("backend") or "kokoro"
+    voice_id = body.get("voice_id") or ""
+    speed = float(body.get("speed", 1.0))
+
+    import openjarvis.speech  # noqa: F401  (registers TTS backends)
+    from openjarvis.core.registry import TTSRegistry
+
+    if not TTSRegistry.contains(backend_key):
+        raise HTTPException(
+            status_code=501,
+            detail=f"TTS backend '{backend_key}' not available",
+        )
+
+    backend = _tts_backend_cache.get(backend_key)
+    if backend is None:
+        backend_cls = TTSRegistry.get(backend_key)
+        backend = backend_cls()
+        _tts_backend_cache[backend_key] = backend
+
+    synth_kwargs: Dict[str, Any] = {"speed": speed}
+    if voice_id:
+        synth_kwargs["voice_id"] = voice_id
+
+    try:
+        result = backend.synthesize(text, **synth_kwargs)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=501, detail=str(exc)) from exc
+
+    if not result.audio:
+        raise HTTPException(status_code=500, detail="TTS produced no audio")
+
+    media_type = (
+        "audio/wav" if result.format == "wav" else f"audio/{result.format}"
+    )
+    return Response(content=result.audio, media_type=media_type)
 
 
 # ---- Feedback routes ----
