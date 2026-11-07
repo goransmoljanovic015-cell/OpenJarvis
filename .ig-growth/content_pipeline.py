@@ -14,13 +14,18 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 from html.parser import HTMLParser
+from carousel_visuals import (
+    VERSION as VISUAL_VERSION, catalogue_snapshot, choose_visual, load_catalogue,
+    prepared_asset, render_slide, validate_visual,
+)
 
 ROOT = Path(__file__).resolve().parent
 SCHEMA = {
     "title": "Naslov objave", "caption": "Opis, bez izmišljenih iskustava",
     "cta": "Sačuvaj ovaj vodič.", "hashtags": ["#AI"],
     "slides": [{"title": "Kratak naslov", "body": "Do 350 znakova",
-                "alt": "Opis slajda za čitač ekrana", "source_ids": ["izvor-1"]}],
+                "alt": "Opis teksta i vizuala za čitač ekrana", "source_ids": ["izvor-1"],
+                "visual": {"kind": "checklist", "layout": "stacked", "caption": "Kratko objašnjenje dijagrama"}}],
     "claims": [{"text": "Doslovan dio teksta slajda ili opisa",
                 "source_id": "izvor-1", "evidence": "Doslovan citat iz izvora"}],
 }
@@ -126,7 +131,7 @@ def source_bundle(path, max_age_days=30):
     return bundle
 
 
-def validate(content, bundle):
+def validate(content, bundle, catalogue=None):
     """Structural/evidence checks are necessary, not proof of factual correctness."""
     errors = []
     if not isinstance(content, dict):
@@ -161,6 +166,10 @@ def validate(content, bundle):
         refs = slide.get("source_ids")
         if not isinstance(refs, list) or not refs or any(not isinstance(s, str) or s not in sources for s in refs):
             errors.append(f"Slajd {i}: dodaj poznate source_ids.")
+        if "visual" in slide:
+            errors.extend(f"Slajd {i}: {error}" for error in validate_visual(slide["visual"], catalogue or {}))
+            if isinstance(slide["visual"], dict):
+                visible.append(slide["visual"].get("caption", ""))
         visible.extend(slide.get(k, "") for k in ("title", "body", "alt"))
     text = "\n".join(t for t in visible if isinstance(t, str))
     claims = content.get("claims")
@@ -197,13 +206,14 @@ def validate(content, bundle):
 
 class AIWriter:
     """Uses the same OpenAI client contract as OpenJarvis's cloud engine."""
-    def __init__(self, model, base_url=None):
+    def __init__(self, model, base_url=None, catalogue=None):
         from openai import OpenAI
         kwargs = {"timeout": 90, "max_retries": 1}
         if base_url:
             kwargs["base_url"] = base_url
         self.client = OpenAI(**kwargs)
         self.model = model
+        self.catalogue = catalogue or {}
 
     def generate(self, topic, brand, bundle, feedback):
         system = (
@@ -215,11 +225,20 @@ class AIWriter:
             "s doslovnim text iz objave i evidence iz izvora. Brojke i cijene izostavi "
             "kad nisu dokazane. Predloži izvedive korake. Prati ograničenja sheme. "
             "ALT opisuje sav važan tekst slajda. Ne koristi emoji ni Markdown u tekstu slajdova."
+            " Svakom slajdu dodaj visual: kind inbox/search/filter/label/before_after/checklist/image/none; "
+            "layout auto/cover/split/stacked/comparison/text. Koristi ilustracije prema temi. "
+            "Screenshot možeš izabrati isključivo s kind=image i asset_id iz dostupnog kataloga. "
+            "Ako nema stvarnog screenshota, koristi izričito shematski prikaz, ne izmišljaj UI. "
+            "Za screenshot odaberi stacked raspored. Za naslovnicu odaberi cover, "
+            "za poređenje comparison. Caption vizuala je najviše 100 znakova. "
+            "ALT mora opisati i vizual. Tekst na slici i strelice ne izmišljaj kao tvrdnje."
         )
         payload = {"topic": topic, "brand": brand, "sources": bundle["sources"],
                    "schema_example": SCHEMA, "limits": {"title": 140, "caption": 1800,
                    "cta": 160, "slide_title": 90, "slide_body": 350, "hashtags": "1–8"},
                    "previous_validation_errors": feedback}
+        payload["available_assets"] = [{"id": aid, "type": a["type"], "description": a["description"]}
+                                       for aid, a in self.catalogue.items()]
         response = self.client.chat.completions.create(
             model=self.model, response_format={"type": "json_object"},
             messages=[{"role": "system", "content": system},
@@ -290,27 +309,14 @@ def fit(draw, text, box, bold=False, minimum=32, maximum=64):
     raise ValueError("Tekst ne stane u dizajn bez smanjenja ispod čitljive veličine.")
 
 
-def render(content, brand, directory):
-    from PIL import Image, ImageDraw, ImageFont
+def render(content, brand, directory, catalogue=None):
+    from PIL import Image
+    catalogue = catalogue or {}
     palette = brand["design"]
     thumbs = []
     for number, slide in enumerate(content["slides"], 1):
-        image = Image.new("RGB", (1080, 1350), palette["background"])
-        draw = ImageDraw.Draw(image)
-        for x in range(0, 1080, 90):
-            draw.line((x, 0, x, 1350), fill=palette["grid"])
-        for y in range(0, 1350, 90):
-            draw.line((0, y, 1080, y), fill=palette["grid"])
-        small = ImageFont.truetype(font_path(), 28)
-        draw.text((72, 65), brand["name"], font=small, fill=palette["accent"])
-        draw.rounded_rectangle((56, 180, 1024, 1190), radius=32, fill=palette["panel"], outline=palette["accent"], width=2)
-        draw.rectangle((90, 225, 185, 235), fill=palette["accent"])
-        title, title_font = fit(draw, slide["title"], (92, 285, 896, 310), bold=True)
-        draw.multiline_text((92, 285), title, font=title_font, fill=palette["text"], spacing=14)
-        body, body_font = fit(draw, slide["body"], (92, 660, 896, 460), maximum=44)
-        draw.multiline_text((92, 660), body, font=body_font, fill=palette["text"], spacing=14)
-        draw.text((72, 1250), brand["handle"], font=small, fill=palette["accent"])
-        draw.text((870, 1250), f"{number:02d} / {len(content['slides']):02d}", font=small, fill=palette["text"])
+        visual = choose_visual(slide, number, len(content["slides"]), content["title"])
+        image = render_slide(slide, visual, brand, catalogue, number, len(content["slides"]), font_path, fit)
         image.save(directory / f"slajd-{number:02d}.png")
         thumbs.append(image.resize((270, 338)))
     cols = min(3, len(thumbs))
@@ -326,9 +332,33 @@ def manifest(directory):
             for p in sorted(directory.iterdir()) if p.is_file() and p.name != "status.json"}
 
 
-def package(content, brand, bundle, directory):
+def package(content, brand, bundle, directory, catalogue=None):
     directory.mkdir(parents=True, exist_ok=True)
-    render(content, brand, directory)
+    catalogue = catalogue or {}
+    # Store resolved choices so every actual visual also has an accessible description.
+    content = json.loads(json.dumps(content))
+    used = {}
+    for i, slide in enumerate(content["slides"], 1):
+        visual = choose_visual(slide, i, len(content["slides"]), content["title"])
+        slide["visual"] = visual
+        if visual["kind"] == "image":
+            aid = visual["asset_id"]
+            asset = catalogue[aid]
+            used[aid] = asset
+            prepared_asset(asset, font_path).save(directory / f"vizual-{aid}.png")
+            slide["alt"] += " Vizual: " + asset["description"]
+            if asset.get("annotations"):
+                slide["alt"] += "; oznake: " + "; ".join(a["label"] for a in asset["annotations"])
+        elif visual["kind"] != "none":
+            descriptions = {"inbox": "poruke se razvrstavaju u oznake", "search": "polja pretrage s označenim pošiljaocem",
+                            "filter": "pravilo povezuje kriterij pošiljaoca s dodjelom oznake", "label": "porukama se dodjeljuje oznaka newslettera",
+                            "before_after": "poređenje nerazvrstanih i označenih poruka", "checklist": "odaberi zadatak, provjeri rezultat i primijeni korak"}
+            slide["alt"] += "; shematski prikaz: " + descriptions[visual["kind"]]
+    errors = validate(content, bundle, catalogue)
+    if errors:
+        raise ValueError("Provjera vizualnog paketa: " + "; ".join(errors))
+    render(content, brand, directory, catalogue)
+    write_json(directory / "visuals.json", catalogue_snapshot(used))
     write_json(directory / "content.json", content)
     write_json(directory / "sources.json", bundle)
     write_json(directory / "brand.json", brand)
@@ -349,17 +379,18 @@ def package(content, brand, bundle, directory):
         f'<h1>{html.escape(content["title"])}</h1><p>Za urednički pregled. Nije objavljeno.</p><main>{figures}</main>'
         f'<h2>Opis objave</h2><pre>{html.escape(caption)}</pre><p><a href="izvori.md">Izvori i dokazi</a></p></html>', encoding="utf-8")
     status = {"status": "ready_for_review", "generated_at": datetime.now(timezone.utc).isoformat(),
-              "checks": "schema, evidence references, quoted evidence, text fit, image export",
+              "checks": "schema, evidence references, quoted evidence, text fit, image export, visual assets",
               "editorial_review_required": True, "files": manifest(directory)}
     write_json(directory / "status.json", status)
     return status
 
 
-def produce(topic, brand, bundle, output, writer=None, content=None, attempts=3):
+def produce(topic, brand, bundle, output, writer=None, content=None, attempts=3, catalogue=None):
+    catalogue = catalogue or {}
     target = output / slug(topic["id"])
     fingerprint = digest({"topic": topic, "brand": brand, "sources": bundle, "content": content,
                           "model": getattr(writer, "model", None) if content is None else None,
-                          "pipeline_version": 1})
+                          "pipeline_version": VISUAL_VERSION, "assets": catalogue_snapshot(catalogue)})
     if target.exists():
         state = read_json(target / "status.json")
         if state.get("fingerprint") == fingerprint and state.get("files") == manifest(target):
@@ -369,7 +400,7 @@ def produce(topic, brand, bundle, output, writer=None, content=None, attempts=3)
     for attempt in range(1, attempts + 1):
         try:
             draft = content if content is not None else writer.generate(topic, brand, bundle, errors)
-            errors = validate(draft, bundle)
+            errors = validate(draft, bundle, catalogue)
             if errors:
                 continue
             if content is None:
@@ -387,7 +418,7 @@ def produce(topic, brand, bundle, output, writer=None, content=None, attempts=3)
             output.mkdir(parents=True, exist_ok=True)
             with tempfile.TemporaryDirectory(prefix=".build-", dir=output) as tmp:
                 staging = Path(tmp)
-                state = package(draft, brand, bundle, staging)
+                state = package(draft, brand, bundle, staging, catalogue)
                 state.update(fingerprint=fingerprint, attempts=attempt, topic=topic)
                 write_json(staging / "status.json", state)
                 # Rename only the completed package; failed renders never appear ready.
@@ -407,7 +438,8 @@ def approve(directory, reviewer):
     if state["files"] != manifest(directory):
         raise ValueError("Paket je izmijenjen nakon provjere. Napravi novu verziju.")
     bundle = source_bundle(directory / "sources.json")
-    errors = validate(read_json(directory / "content.json"), bundle)
+    catalogue = read_json(directory / "visuals.json") if (directory / "visuals.json").is_file() else {}
+    errors = validate(read_json(directory / "content.json"), bundle, catalogue)
     if errors:
         raise ValueError("Ponovna provjera nije prošla: " + "; ".join(errors))
     if not reviewer.strip():
@@ -429,6 +461,7 @@ def main(argv=None):
     build.add_argument("--base-url", default=os.getenv("OPENAI_BASE_URL"))
     build.add_argument("--attempts", type=int, choices=range(1, 6), default=3)
     build.add_argument("--refresh-sources", action="store_true", help="Ponovo preuzmi izvore prije pisanja")
+    build.add_argument("--assets", type=Path, help="Katalog lokalnih screenshotova i ilustracija")
     approval = sub.add_parser("approve", help="Zabilježi ručno odobrenje pregledanog paketa")
     approval.add_argument("directory", type=Path)
     approval.add_argument("--reviewer", required=True)
@@ -439,6 +472,7 @@ def main(argv=None):
             print("Odobreno. Paket nije objavljen.")
             return 0
         brand = read_json(args.brand)
+        catalogue = load_catalogue(args.assets) if args.assets else {}
         queue = read_json(args.queue)
         ids = [slug(t["id"]) for t in queue["topics"]]
         if len(ids) != len(set(ids)):
@@ -462,15 +496,15 @@ def main(argv=None):
                 if content is None and writer is None:
                     if not args.model:
                         raise ValueError("Postavi IG_MODEL ili --model i OPENAI_API_KEY za AI generisanje.")
-                    writer = AIWriter(args.model, args.base_url)
-                results.append(produce(topic, brand, bundle, args.output.resolve(), writer, content, args.attempts))
+                    writer = AIWriter(args.model, args.base_url, catalogue)
+                results.append(produce(topic, brand, bundle, args.output.resolve(), writer, content, args.attempts, catalogue))
             except Exception as exc:
                 # Keep other topics running; never report a failed topic as ready.
                 results.append({"id": topic["id"], "status": "needs_attention", "error": str(exc)})
         write_json(args.output / "batch-report.json", results)
         print(json.dumps(results, ensure_ascii=False, indent=2))
         return int(any(r["status"] == "needs_attention" for r in results))
-    except (OSError, ValueError, KeyError) as exc:
+    except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"Greška: {exc}")
         return 1
 

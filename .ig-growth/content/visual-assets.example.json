@@ -1,0 +1,15 @@
+{
+  "assets": [],
+  "example_only": {
+    "id": "gmail-pretraga",
+    "file": "screenshots/gmail-pretraga.png",
+    "type": "screenshot",
+    "description": "Stvarni Gmail snimak s otvorenim opcijama pretrage i označenim poljem pošiljaoca.",
+    "crop": [0.1, 0.1, 0.8, 0.8],
+    "redactions": [[0.0, 0.0, 0.25, 0.1]],
+    "annotations": [
+      {"box": [0.35, 0.2, 0.4, 0.15], "label": "Pošiljalac", "arrow_from": [0.1, 0.4]}
+    ],
+    "min_display_width": 640
+  }
+}

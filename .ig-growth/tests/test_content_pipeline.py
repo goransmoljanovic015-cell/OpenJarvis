@@ -5,11 +5,14 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import sys
 import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+import carousel_visuals as visuals
 spec = importlib.util.spec_from_file_location("pipeline", ROOT / "content_pipeline.py")
 p = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(p)
@@ -230,6 +233,98 @@ class PipelineTests(unittest.TestCase):
         p.write_json(package / "status.json", state)
         with self.assertRaises(ValueError):
             p.approve(package, "Test Editor")
+
+    def asset_catalogue(self, **overrides):
+        from PIL import Image
+        image = self.directory / "screen.png"
+        Image.new("RGB", (1000, 600), "#FFFFFF").save(image)
+        entry = {"id": "real-screen", "file": "screen.png", "type": "screenshot",
+                 "description": "Testni snimak sa označenim poljem pretrage", **overrides}
+        path = self.directory / "assets.json"
+        p.write_json(path, {"assets": [entry]})
+        return path, visuals.load_catalogue(path)
+
+    def test_unknown_asset_cannot_be_invented_by_model(self):
+        self.content["slides"][1]["visual"] = {"kind": "image", "asset_id": "invented"}
+        self.assertTrue(p.validate(self.content, self.bundle))
+
+    def test_malformed_visuals_are_rejected(self):
+        for value in (None, [], {}, {"kind": "imaginary"}, {"kind": "image", "asset_id": []},
+                      {"kind": "inbox", "layout": "text"}, {"kind": "none", "layout": "split"}):
+            with self.subTest(value=value):
+                self.content["slides"][0]["visual"] = value
+                self.assertTrue(p.validate(self.content, self.bundle))
+
+    def test_catalogue_checks_missing_file_before_api_call(self):
+        path = self.directory / "assets.json"
+        p.write_json(path, {"assets": [{"id": "missing", "file": "missing.png", "type": "screenshot", "description": "Missing file"}]})
+        with self.assertRaises(FileNotFoundError):
+            visuals.load_catalogue(path)
+
+    def test_catalogue_rejects_traversal_and_invalid_boxes(self):
+        path, _ = self.asset_catalogue()
+        for override in ({"file": "../outside.png"}, {"redactions": [[.9, 0, .5, .2]]},
+                         {"crop": [0, 0, 0, 1]}, {"min_display_width": "small"},
+                         {"annotations": [{"box": [0, 0, .2, .2], "label": "Field", "arrow_from": [-1, 0]}]}):
+            with self.subTest(override=override):
+                data = p.read_json(path)
+                data["assets"][0].update(override)
+                p.write_json(path, data)
+                with self.assertRaises(ValueError):
+                    visuals.load_catalogue(path)
+                path, _ = self.asset_catalogue()
+
+    def test_crop_and_redaction_are_applied_to_exported_asset(self):
+        _, catalogue = self.asset_catalogue(crop=[.1, .1, .8, .8], redactions=[[.1, .1, .2, .2]])
+        image = visuals.prepared_asset(catalogue["real-screen"], p.font_path)
+        self.assertEqual(image.size, (800, 480))
+        self.assertEqual(image.getpixel((160, 96)), (20, 32, 51))
+        self.assertEqual(image.getpixel((790, 470)), (255, 255, 255))
+
+    def test_screen_package_bundles_only_prepared_asset_and_visual_alt(self):
+        from PIL import Image
+        _, catalogue = self.asset_catalogue(redactions=[[.1, .1, .2, .2]], annotations=[
+            {"box": [.45, .3, .3, .2], "label": "Polje pretrage", "arrow_from": [.15, .65]}])
+        self.content["slides"][1]["visual"] = {"kind": "image", "layout": "stacked", "asset_id": "real-screen"}
+        p.produce(self.topic, self.brand, self.bundle, self.directory / "out", content=self.content, catalogue=catalogue)
+        package = self.directory / "out/test-post"
+        self.assertFalse((package / "screen.png").exists())
+        with Image.open(package / "vizual-real-screen.png") as image:
+            self.assertEqual(image.getpixel((200, 120)), (20, 32, 51))
+        document = p.read_json(package / "content.json")
+        self.assertIn("Polje pretrage", document["slides"][1]["alt"])
+        self.assertIn("real-screen", p.read_json(package / "visuals.json"))
+        p.approve(package, "Test Editor")
+        (package / "vizual-real-screen.png").write_bytes(b"modified")
+        with self.assertRaises(ValueError):
+            p.approve(package, "Test Editor")
+
+    def test_tiny_screenshot_is_blocked_instead_of_silently_shrunk(self):
+        _, catalogue = self.asset_catalogue()
+        self.content["slides"][1]["visual"] = {"kind": "image", "layout": "split", "asset_id": "real-screen"}
+        with self.assertRaises(ValueError):
+            p.produce(self.topic, self.brand, self.bundle, self.directory / "out", content=self.content, catalogue=catalogue)
+        self.assertFalse((self.directory / "out/test-post").exists())
+
+    def test_source_image_changes_invalidate_package_cache(self):
+        from PIL import Image
+        path, catalogue = self.asset_catalogue()
+        self.content["slides"][1]["visual"] = {"kind": "image", "layout": "stacked", "asset_id": "real-screen"}
+        p.produce(self.topic, self.brand, self.bundle, self.directory / "out", content=self.content, catalogue=catalogue)
+        Image.new("RGB", (1000, 600), "#000000").save(self.directory / "screen.png")
+        updated = visuals.load_catalogue(path)
+        self.assertNotEqual(visuals.catalogue_snapshot(catalogue), visuals.catalogue_snapshot(updated))
+        with self.assertRaises(ValueError):
+            p.produce(self.topic, self.brand, self.bundle, self.directory / "out", content=self.content, catalogue=updated)
+
+    def test_layouts_are_visually_distinct_and_have_correct_dimensions(self):
+        hashes = set()
+        for layout in ("cover", "split", "stacked", "comparison"):
+            image = visuals.render_slide(self.content["slides"][1], {"kind": "filter", "layout": layout},
+                                         self.brand, {}, 2, 6, p.font_path, p.fit)
+            self.assertEqual(image.size, (1080, 1350))
+            hashes.add(p.digest(image.tobytes().hex()))
+        self.assertEqual(len(hashes), 4)
 
 
 if __name__ == "__main__":

@@ -92,6 +92,58 @@ zaustavlja druge, a izlazni kod je nenulti ako barem jedna zahtijeva pažnju.
 Privremeni izvoz postaje paket tek nakon što su sve slike i datoteke gotove.
 Sedam naslova se više ne mapira na isti sadržaj. Dupli naslovi paketa se odbijaju.
 
+## Vizuali, screenshotovi i rasporedi
+
+Svaki slajd sada može imati `visual`, na primjer:
+
+```json
+{"kind": "filter", "layout": "stacked", "caption": "Kriterij vodi do odabrane radnje."}
+```
+
+Podržani `kind`: `inbox`, `search`, `filter`, `label`, `before_after`,
+`checklist`, `image` i `none`. Prvih šest su programski crtane ilustracije
+s jasnom oznakom **SHEMATSKI PRIKAZ**. Nisu screenshotovi proizvoda.
+Rasporedi su `cover`, `stacked`, `split`, `comparison`, `text` i `auto`.
+Bez eksplicitnog vizuala generator bira ilustraciju i raspored; `none` zadržava
+slajd samo s tekstom. `text` ne može sakriti već odabranu sliku.
+
+Za stvarne screenshotove ili vlastite ilustracije kopiraj
+`content/visual-assets.example.json`, dodaj vlastite slike u podfolder i prenesi
+prilagođenu stavku iz `example_only` u listu `assets`. Uključen primjer kataloga
+namjerno je prazan: ne predstavlja nepostojeći snimak ekrana.
+
+```powershell
+python .ig-growth/generate.py build --id 02-gmail-filter --assets .ig-growth/content/moji-vizuali.json --output .ig-growth/packages-vizuali
+```
+
+U sadržaju odgovarajućeg slajda postavi:
+
+```json
+{"kind": "image", "layout": "stacked", "asset_id": "gmail-pretraga"}
+```
+
+AI dobija samo registrovane ID-eve, vrstu i opis. Ne može izmišljati putanje
+slika. `--assets` omogućava izbor stvarne slike, ali ne zamjenjuje eksplicitne
+ilustracije u već pripremljenom primjeru bez izmjene njegovog `visual` polja.
+
+Katalog prihvata PNG, JPEG i WEBP unutar svog foldera. `type` je `screenshot`
+ili `illustration`. Opcionalni `crop` je `[x, y, širina, visina]`, s vrijednostima
+od nule do jedan u odnosu na originalnu sliku nakon EXIF orijentacije.
+`redactions` i `annotations[].box` koriste iste normalizovane koordinate,
+ali **u odnosu na već izrezanu sliku**. `arrow_from` je početna `[x, y]`
+koordinata strelice u istom prostoru. Zatamnjivanje se radi prije izvoza;
+paket sadrži samo obrađenu sliku, ne nezaštićen original.
+
+Oznake dobijaju brojeve, okvir i opcionalnu strelicu, uz čitljiv opis ispod
+slike. Screenshot se ne smije smanjiti ispod `min_display_width` (podrazumijevano
+640 px); promijeni raspored ili izrez ako bi bio premalen. Predugačak opis ili
+oznaka blokira paket umjesto preklapanja teksta.
+
+Izvoz dodaje `visuals.json` s metapodacima i hashom korištenih izvora slike,
+obrađene `vizual-ID.png` datoteke i ALT opis samog vizuala. Promjena slike,
+izreza, oznake ili skrivene zone mijenja fingerprint. Takva izmjena zahtijeva
+novu verziju paketa i novo odobrenje, kao i promjena teksta.
+
 ## Granice ove verzije
 
 Ovo implementira proizvodnju i urednički red za carousel pakete. Ne povezuje
@@ -100,8 +152,9 @@ poruke i ne preuzima stvarne metrike. Takve radnje zahtijevaju zaseban adapter,
 autorizovan račun i važeći pristup platformi. `approved` znači spremno za
 objavljivanje, ne „objavljeno”.
 
-Nema video/glas generatora za Reels. Dizajn koristi tipografiju i boje brenda;
-nema automatski dodanog logotipa niti AI generisanih ilustracija. Na Windowsu,
+Nema video/glas generatora za Reels. Dizajn koristi tipografiju, boje brenda,
+programske ilustracije i slike iz kataloga. Nema automatskog snimanja korisničkih
+računa, dodavanja logotipa ili poziva servisu za AI ilustracije. Na Windowsu,
 Linuxu i macOS-u traži Arial ili DejaVu Sans; vlastite Unicode TTF datoteke
 možeš zadati kroz `IG_FONT_REGULAR` i `IG_FONT_BOLD`.
 
