@@ -1,0 +1,11 @@
+{
+  "topics": [
+    {"id": "01-ai-zadaci", "day": "Ponedjeljak", "title": "Svakodnevni zadaci za koje možeš tražiti AI nacrt", "goal": "Daj konkretne prijedloge upita za pisanje i planiranje. Označi ih kao prijedloge, bez tvrdnji o povezivanju s aplikacijama ili izvršavanju zadataka.", "format": "carousel", "sources_file": "sources.json"},
+    {"id": "02-gmail-filter", "day": "Utorak", "title": "Uredi inbox pravilom koje radi umjesto tebe", "format": "carousel", "sources_file": "sources.json", "content_file": "sample-gmail.json"},
+    {"id": "03-prije-poslije", "day": "Srijeda", "title": "Od nejasnog upita do jasnog zadatka za AI", "goal": "Prikaži izričito hipotetičan loš i dobar upit. Uključi cilj, ton i očekivani format. Bez izmišljenih rezultata.", "format": "carousel", "sources_file": "sources.json"},
+    {"id": "04-predlosci", "day": "Četvrtak", "title": "Predlošci upita za nacrt poruke, plana i objave", "goal": "Uključi cijele predloške direktno u slajdove. Ne obećavaj download koji ne postoji.", "format": "carousel", "sources_file": "sources.json"},
+    {"id": "05-ai-mitovi", "day": "Petak", "title": "AI nacrt i automatizacija pravilom: šta biraš?", "goal": "Uporedi Gmail filter prema kriterijima s davanjem uputa jezičkom modelu. Bez apsolutnih tvrdnji o tačnosti.", "format": "carousel", "sources_file": "sources.json"},
+    {"id": "06-mali-proces", "day": "Subota", "title": "Isplaniraj mali proces prije nego što ga automatizuješ", "goal": "Hipotetični primjer newsletter oznake i ponavljajućeg termina za pregled inboxa. Bez zarade i izmišljenih klijenata.", "format": "carousel", "sources_file": "sources.json"},
+    {"id": "07-pregled", "day": "Nedjelja", "title": "Sedmični pregled: šta je radilo, šta mijenjaš?", "goal": "Daj pitanja za samoprovjeru i upute za ponavljajući termin u Calendaru. Ne izmišljaj metrike.", "format": "carousel", "sources_file": "sources.json"}
+  ]
+}

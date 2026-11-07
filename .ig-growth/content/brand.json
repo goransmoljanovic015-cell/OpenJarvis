@@ -1,0 +1,21 @@
+{
+  "name": "OD NULE DO AI",
+  "handle": "@Goran015",
+  "language": "Bosanski, latinica s dijakritikom",
+  "audience": "Početnici koji žele praktično koristiti AI i automatizaciju",
+  "voice": "Kratko, razgovorno, konkretno. Objasni korake bez tehničkog žargona.",
+  "rules": [
+    "Ne izmišljaj iskustva, klijente, zaradu ili svjedočanstva.",
+    "Ne obećavaj rast pratilaca ni uštedu bez dokaza.",
+    "Cijene i mogućnosti alata navodi samo uz aktuelan izvor.",
+    "Zaštiti privatne podatke u primjerima.",
+    "Predloži jednu jednostavnu radnju koju čitalac može probati."
+  ],
+  "design": {
+    "background": "#010B18",
+    "panel": "#071B30",
+    "grid": "#10243A",
+    "accent": "#30D1F5",
+    "text": "#FFFFFF"
+  }
+}

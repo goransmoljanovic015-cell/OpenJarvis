@@ -1,0 +1,118 @@
+{
+  "date": "2026-08-03",
+  "phase": 1,
+  "niche": "Od nule do AI",
+  "audience": "Početnici bez tehničke osnove",
+  "trends_analyzed": 6,
+  "trends": [
+    {
+      "rank": 1,
+      "topic": "ChatGPT za zarađivanje novca",
+      "trend_score": 9.2,
+      "engagement_potential": 9.5,
+      "alignment_with_audience": 9.0,
+      "alignment_with_values": 9.5,
+      "why": "Direktna veza sa monetizacijom - tačno ono što tvoji people traže",
+      "content_ideas": [
+        "5 načina da zaradiš $100+ sa ChatGPT",
+        "Kako kreirati AI sidelines kao početnik",
+        "ChatGPT prompts koji te plaćaju"
+      ],
+      "estimated_reach": "High (20k-50k impressions)"
+    },
+    {
+      "rank": 2,
+      "topic": "AI za automatizaciju svakodnevnih poslova",
+      "trend_score": 8.8,
+      "engagement_potential": 8.5,
+      "alignment_with_audience": 9.2,
+      "alignment_with_values": 9.0,
+      "why": "Automatizacija je jedna od tvojih vrednosti, praktična je, i početnike zanima",
+      "content_ideas": [
+        "7 poslova koje AI može da uradi za tebe (BESPLATNO)",
+        "Kako da prepisati 1 sat rada u 5 minuta sa AI",
+        "AI alati koji štede vreme - početnicima"
+      ],
+      "estimated_reach": "High (15k-40k impressions)"
+    },
+    {
+      "rank": 3,
+      "topic": "Kako ChatGPT pravi dizajn (bez Figme znanja)",
+      "trend_score": 8.5,
+      "engagement_potential": 8.8,
+      "alignment_with_audience": 8.7,
+      "alignment_with_values": 8.5,
+      "why": "Grafika ti je strana - možeš pokazati kako AI + design kombinacija radi",
+      "content_ideas": [
+        "AI napravio grafiku - evo kako (step-by-step)",
+        "Midjourney + ChatGPT za content kreatora",
+        "Besplatni AI alati za dizajn bez iskustva"
+      ],
+      "estimated_reach": "Medium-High (12k-35k impressions)"
+    },
+    {
+      "rank": 4,
+      "topic": "Šta AI NE može (realnost vs hype)",
+      "trend_score": 7.9,
+      "engagement_potential": 7.6,
+      "alignment_with_audience": 8.8,
+      "alignment_with_values": 7.5,
+      "why": "Početnici su zbunjeni - demistifikacija je vredna",
+      "content_ideas": [
+        "5 stvari koje AI NE može da uradi (još)",
+        "ChatGPT greške - šta trebam znati",
+        "AI hype vs realnost - desiti se od balona"
+      ],
+      "estimated_reach": "Medium (10k-25k impressions)"
+    },
+    {
+      "rank": 5,
+      "topic": "Novi AI alati koje su malo poznati",
+      "trend_score": 7.5,
+      "engagement_potential": 7.2,
+      "alignment_with_audience": 7.6,
+      "alignment_with_values": 7.8,
+      "why": "Praktična primena - novi alati su uvek interesantni",
+      "content_ideas": [
+        "3 AI alata od kojih nisi čuo",
+        "Ovo je bolje od ChatGPT-a (za X)",
+        "Hidden gems - AI alati koje koriste samo pro-i"
+      ],
+      "estimated_reach": "Medium (8k-20k impressions)"
+    },
+    {
+      "rank": 6,
+      "topic": "AI koji će se radikalno promeniti u sledećem mesecu",
+      "trend_score": 6.8,
+      "engagement_potential": 6.5,
+      "alignment_with_audience": 6.2,
+      "alignment_with_values": 7.0,
+      "why": "Spekulacija - više views ali manja konverzija",
+      "content_ideas": [
+        "Šta je sleće u AI svetu",
+        "Predviđanja: Gde ide AI do kraja 2026",
+        "Update koji dolazi u ChatGPT"
+      ],
+      "estimated_reach": "Medium (10k-30k impressions)"
+    }
+  ],
+  "top_3_recommendations": [
+    {
+      "position": 1,
+      "topic": "ChatGPT za zarađivanje novca",
+      "action": "Pripremi se za Phase 2 sa ovom temom - svi početnički trendovi počinju ovde"
+    },
+    {
+      "position": 2,
+      "topic": "AI za automatizaciju svakodnevnih poslova",
+      "action": "Kombinuj sa svojom grafičkom stranošću - vizuelni tutorijali će biti viral"
+    },
+    {
+      "position": 3,
+      "topic": "Kako ChatGPT pravi dizajn (bez Figme znanja)",
+      "action": "Tvoja strana - ovo je Gold! Grafika + AI + početnici = formula"
+    }
+  ],
+  "next_action": "Izaberi jedan od top 3 i kreni na Phase 2 (Story + Caption)",
+  "status": "Ready for Phase 2"
+}
