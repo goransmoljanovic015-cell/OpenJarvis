@@ -1,0 +1,28 @@
+{
+  "sources": [
+    {
+      "id": "gmail-filters",
+      "title": "Create rules to filter your emails — Gmail Help",
+      "url": "https://support.google.com/mail/answer/6579?hl=en",
+      "checked_on": "2026-11-07",
+      "start_at": "Create rules to filter your emails",
+      "text": "Uredničke bilješke: Gmail filteri obrađuju dolaznu poštu prema kriterijima pretrage. Mogu dodijeliti oznaku, arhivirati, obrisati, označiti zvjezdicom ili proslijediti poruku. Na računaru otvori Gmail, opcije pretrage, unesi kriterije i provjeri rezultate pretrage. Zatim kreiraj filter, izaberi radnju i potvrdi. U postavkama Filters and Blocked Addresses moguće je urediti ili obrisati filter. Prosljeđivanje filterom važi za nove poruke. Odgovor na poruku prolazi filter samo ako zadovoljava iste kriterije. Doslovan dokaz: Choose what you’d like the filter to do."
+    },
+    {
+      "id": "ai-instructions",
+      "title": "Prompt engineering — OpenAI documentation",
+      "url": "https://developers.openai.com/api/docs/guides/prompt-engineering",
+      "checked_on": "2026-11-07",
+      "start_at": "Message roles and instruction following",
+      "text": "Uredničke bilješke: Modelu se mogu dati upute koje određuju ton, cilj i primjere očekivanog odgovora. Relevantan kontekst pomaže ograničiti odgovor na odabrane izvore. To ne potvrđuje tačnost proizvoljnog odgovora niti garantuje poslovne rezultate. Doslovan dokaz: You can provide instructions to the model"
+    },
+    {
+      "id": "calendar-repeat",
+      "title": "Create a recurring event — Google Calendar Help",
+      "url": "https://support.google.com/calendar/answer/37115?hl=en",
+      "checked_on": "2026-11-07",
+      "start_at": "Create a recurring event",
+      "text": "Uredničke bilješke: Događaj u Google Calendaru može se ponavljati odabranim danima. Na računaru kreiraj događaj, unesi naslov i detalje, otvori Does not repeat, izaberi učestalost i kraj ponavljanja, pa sačuvaj. Postojeći događaj može se urediti da se ponavlja. Doslovan dokaz: you can make it repeat on certain days."
+    }
+  ]
+}

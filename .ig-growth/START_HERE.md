@@ -1,5 +1,11 @@
 # 🚀 START HERE - IG GROWTH ENGINE LAUNCH SYSTEM
 
+> **Novi proces za stvarne pakete objava:** pogledaj [CONTENT_PIPELINE.md](CONTENT_PIPELINE.md).
+> `content_pipeline.py` generiše, provjerava i izvozi carousel pakete. `generate.py`
+> sada pokreće isti proces; prethodna verzija samo je simulirala automatizaciju.
+> Ove skripte ne objavljuju, ne šalju DM-ove i ne prate mreže u pozadini.
+> Oznake „gotovo” i projekcije rasta u starijim uputama nisu dokaz izvršenih radnji.
+
 **Zdravo Gorane! Evo što je u ovoj mapi - kompletni sistem za rast Instagram-a sa 3 platforme.**
 
 ---
