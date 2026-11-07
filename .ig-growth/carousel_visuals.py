@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 KINDS = ("inbox", "search", "filter", "label", "before_after", "checklist", "image", "none")
 LAYOUTS = ("auto", "cover", "split", "stacked", "comparison", "text")
-VERSION = 2
+VERSION = 3
 
 
 def valid_box(box):
@@ -276,6 +276,9 @@ def render_visual(image, visual, box, palette, catalogue, font_path, fit):
 
 
 def render_slide(slide, visual, brand, catalogue, number, total, font_path, fit):
+    if brand.get("layout_style") == "editorial":
+        from carousel_editorial import render_editorial
+        return render_editorial(slide, visual, brand, catalogue, number, total, font_path, fit)
     palette = brand["design"]
     image = Image.new("RGB", (1080, 1350), palette["background"])
     draw = ImageDraw.Draw(image)

@@ -146,6 +146,26 @@ novu verziju paketa i novo odobrenje, kao i promjena teksta.
 
 ## Granice ove verzije
 
+### Novi editorial dizajn
+
+Za veće naslove, manje teksta, 3D naslovnu ilustraciju i izmjenu tamnoplavih,
+svijetlih i tirkiznih stranica pokreni:
+
+```powershell
+python .ig-growth/generate.py build --queue .ig-growth/content/queue-editorial.json --brand .ig-growth/content/brand-editorial.json --assets .ig-growth/content/assets-editorial.json --output .ig-growth/packages-editorial
+```
+
+Ovaj izdvojeni primjer koristi kraće tekstove u `sample-gmail-editorial.json`.
+Tema se uključuje kroz `layout_style: editorial` u brendu i ima namjenski
+vertikalni raspored za naslovnicu, objašnjenja, poređenje i završni poziv.
+Dugi tekstovi se vraćaju na doradu; ne skupljaju se u nečitljive odlomke.
+Naslovna WebP ilustracija je napravljena ugrađenim image_gen alatom, nije
+snimak Gmaila. Prompt i porijeklo su u `content/assets/README.md`.
+Standardni dizajn i njegov primjer ostaju dostupni odvojeno.
+
+Fingerprint uključuje i hash koda renderera, tako da promjena dizajna više
+ne vraća zastarjeli izvoz iz cachea. Novi dizajn zahtijeva novi output folder.
+
 Ovo implementira proizvodnju i urednički red za carousel pakete. Ne povezuje
 Instagram, Facebook ili X račune, ne zakazuje objave na mrežama, ne šalje
 poruke i ne preuzima stvarne metrike. Takve radnje zahtijevaju zaseban adapter,

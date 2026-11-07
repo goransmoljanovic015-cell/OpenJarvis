@@ -326,6 +326,26 @@ class PipelineTests(unittest.TestCase):
             hashes.add(p.digest(image.tobytes().hex()))
         self.assertEqual(len(hashes), 4)
 
+    def test_complete_editorial_sample_exports_and_can_be_reviewed(self):
+        brand = p.read_json(ROOT / "content/brand-editorial.json")
+        content = p.read_json(ROOT / "content/sample-gmail-editorial.json")
+        catalogue = visuals.load_catalogue(ROOT / "content/assets-editorial.json")
+        result = p.produce(self.topic, brand, self.bundle, self.directory / "out", content=content, catalogue=catalogue)
+        self.assertEqual(result["status"], "ready_for_review")
+        package = self.directory / "out/test-post"
+        self.assertEqual(len(list(package.glob("slajd-*.png"))), 6)
+        self.assertTrue((package / "vizual-inbox-editorial-v3.png").is_file())
+        p.approve(package, "Editor")
+
+    def test_editorial_theme_accepts_annotated_readable_screenshot(self):
+        _, catalogue = self.asset_catalogue(annotations=[{"box": [.2, .3, .4, .2], "label": "Pošiljalac"}])
+        self.brand["layout_style"] = "editorial"
+        self.content["slides"][1]["visual"] = {"kind": "image", "asset_id": "real-screen", "layout": "stacked"}
+        self.content["slides"][1]["body"] = "Pronađi poruke prema pošiljaocu."
+        image = visuals.render_slide(self.content["slides"][1], self.content["slides"][1]["visual"],
+                                     self.brand, catalogue, 2, 6, p.font_path, p.fit)
+        self.assertEqual(image.size, (1080, 1350))
+
 
 if __name__ == "__main__":
     unittest.main()

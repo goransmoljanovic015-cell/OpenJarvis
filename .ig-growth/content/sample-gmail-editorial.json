@@ -1,0 +1,93 @@
+{
+  "title": "Inbox pun. Glava mirna.",
+  "caption": "Newsletteri pomiješani s važnim porukama? Probaj Gmail filter koji dodjeljuje oznaku. Ovo je automatizacija pravilom: ti biraš kriterij i radnju. Počni jednim poznatim pošiljaocem, provjeri rezultate i tek onda proširi pravilo.",
+  "cta": "Sačuvaj vodič i napiši koju vrstu poruka želiš lakše pronaći.",
+  "hashtags": [
+    "#Automatizacija",
+    "#Gmail",
+    "#Produktivnost",
+    "#OdNuleDoAI"
+  ],
+  "slides": [
+    {
+      "title": "Inbox pun.\nGlava mirna.",
+      "body": "Postavi Gmail filter koji newsletterima dodjeljuje oznaku.",
+      "alt": "Inbox pun. Glava mirna. Postavi Gmail filter koji newsletterima dodjeljuje oznaku.",
+      "source_ids": [
+        "gmail-filters"
+      ],
+      "visual": {
+        "kind": "image",
+        "layout": "cover",
+        "asset_id": "inbox-editorial-v3"
+      }
+    },
+    {
+      "title": "Pronađi pravog\npošiljaoca.",
+      "body": "Gmail → opcije pretrage → polje pošiljaoca. Unesi adresu newslettera.",
+      "alt": "Pronađi pravog pošiljaoca. Gmail → opcije pretrage → polje pošiljaoca. Unesi adresu newslettera.",
+      "source_ids": [
+        "gmail-filters"
+      ],
+      "visual": {
+        "kind": "search",
+        "layout": "stacked"
+      }
+    },
+    {
+      "title": "Provjeri.\nTek onda potvrdi.",
+      "body": "Pregledaj rezultate. Ako vidiš važne poruke koje ne pripadaju tu, suzi kriterij.",
+      "alt": "Provjeri. Tek onda potvrdi. Pregledaj rezultate. Ako vidiš važne poruke koje ne pripadaju tu, suzi kriterij.",
+      "source_ids": [
+        "gmail-filters"
+      ],
+      "visual": {
+        "kind": "before_after",
+        "layout": "comparison"
+      }
+    },
+    {
+      "title": "Jedno pravilo.\nManje traženja.",
+      "body": "Izaberi Create filter, dodijeli oznaku Newsletteri i potvrdi.",
+      "alt": "Jedno pravilo. Manje traženja. Izaberi Create filter, dodijeli oznaku Newsletteri i potvrdi.",
+      "source_ids": [
+        "gmail-filters"
+      ],
+      "visual": {
+        "kind": "filter",
+        "layout": "stacked"
+      }
+    },
+    {
+      "title": "Za početak,\nsamo oznaka.",
+      "body": "Filter možeš urediti ili obrisati u postavkama Filters and Blocked Addresses.",
+      "alt": "Za početak, samo oznaka. Filter možeš urediti ili obrisati u postavkama Filters and Blocked Addresses.",
+      "source_ids": [
+        "gmail-filters"
+      ],
+      "visual": {
+        "kind": "label",
+        "layout": "stacked"
+      }
+    },
+    {
+      "title": "Probaj na jednom\nnewsletteru.",
+      "body": "Sačekaj narednu poruku i provjeri oznaku. Sačuvaj ovaj vodič.",
+      "alt": "Probaj na jednom newsletteru. Sačekaj narednu poruku i provjeri oznaku. Sačuvaj ovaj vodič.",
+      "source_ids": [
+        "gmail-filters"
+      ],
+      "visual": {
+        "kind": "checklist",
+        "layout": "stacked"
+      }
+    }
+  ],
+  "claims": [
+    {
+      "text": "Postavi Gmail filter koji newsletterima dodjeljuje oznaku.",
+      "source_id": "gmail-filters",
+      "evidence": "Choose what you’d like the filter to do."
+    }
+  ]
+}

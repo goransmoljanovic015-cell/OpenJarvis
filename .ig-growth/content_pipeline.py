@@ -390,7 +390,9 @@ def produce(topic, brand, bundle, output, writer=None, content=None, attempts=3,
     target = output / slug(topic["id"])
     fingerprint = digest({"topic": topic, "brand": brand, "sources": bundle, "content": content,
                           "model": getattr(writer, "model", None) if content is None else None,
-                          "pipeline_version": VISUAL_VERSION, "assets": catalogue_snapshot(catalogue)})
+                          "pipeline_version": VISUAL_VERSION, "assets": catalogue_snapshot(catalogue),
+                          "renderer_sha256": hashlib.sha256((ROOT / "carousel_visuals.py").read_bytes()
+                              + (ROOT / "carousel_editorial.py").read_bytes()).hexdigest()})
     if target.exists():
         state = read_json(target / "status.json")
         if state.get("fingerprint") == fingerprint and state.get("files") == manifest(target):

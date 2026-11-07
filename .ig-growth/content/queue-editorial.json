@@ -1,0 +1,11 @@
+{
+  "topics": [
+    {
+      "id": "gmail-editorial-v3",
+      "title": "Inbox pun. Glava mirna.",
+      "format": "carousel",
+      "sources_file": "sources.json",
+      "content_file": "sample-gmail-editorial.json"
+    }
+  ]
+}
